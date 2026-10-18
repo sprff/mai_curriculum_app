@@ -1,0 +1,7 @@
+#!/bin/sh
+branch=$(git branch --show-current)
+
+if [ "$branch" = "main" ]; then
+    echo "Коммиты в main запрещены. Создай рабочую ветку."
+    exit 1
+fi
