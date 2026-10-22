@@ -1,0 +1,47 @@
+openapi: 3.1.0
+
+info:
+  title: MAI Curriculum
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local server
+
+paths:
+  /ping:
+    get:
+      operationId: Ping
+      responses:
+        '200':
+          description: Pong response
+          content:
+            application/json:
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorsResponse' }
+        default:
+          description: Unspecified error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorsResponse' }
+
+components:
+  schemas:
+    ErrorsResponse:
+      type: object
+      description: Тело ответа об ошибке
+      properties:
+        errors:
+          type: array
+          items: { $ref: '#/components/schemas/ErrorItem' }
+
+    ErrorItem:
+      type: object
+      required: [ error_message ]
+      properties:
+        error_message: { type: string }
