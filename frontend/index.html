@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+    <!-- head хранит служебную информацию о странице -->
+
+    <meta charset="UTF-8">
+    <!-- UTF-8 нужен, чтобы русские буквы отображались правильно -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Эта строка помогает странице нормально выглядеть на телефонах -->
+    <!-- width=device-width означает использовать реальную ширину экрана -->
+
+    <title>Вход — Расписание университета</title>
+    <!-- title — название вкладки в браузере -->
+
+    <link rel="stylesheet" href="styles.css">
+    <!-- Подключаем отдельный файл styles.css -->
+</head>
+
+<body>
+    <!-- body содержит все, что пользователь видит на странице -->
+
+    <div class="page">
+        <!-- div — обычный контейнер для объединения элементов -->
+        <!-- class="page" связывает этот блок со стилями из styles.css -->
+
+        <header class="page-header">
+            <!-- header — верхняя часть страницы, т.е. шапка -->
+
+            <a class="brand" href="#" aria-label="Расписание университета">
+                <!-- a обычно используется для ссылки -->
+                <!-- Здесь ссылка оформлена как название нашего сайта -->
+                <!-- href="#" пока никуда не переводит -->
+                <!-- aria-label помогает программам чтения с экрана понять назначение ссылки -->
+
+                <span class="brand__icon" aria-hidden="true">
+                    <!-- span — небольшой строчный контейнер -->
+                    <!-- Внутри находится иконка календаря -->
+                    <!-- aria-hidden="true" говорит, что эту декоративную иконку можно не озвучивать -->
+
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <!-- svg позволяет рисовать простые значки прямо в HTML -->
+                        <!-- viewBox задает внутреннюю систему координат значка -->
+                        <!-- fill="none" означает, что фигура внутри не будет залита цветом -->
+
+                        <path
+                            d="M7 3V6M17 3V6M4.5 9H19.5M6 5H18C19.1 5 20 5.9 20 7V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V7C4 5.9 4.9 5 6 5Z"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                        <!-- path описывает линии, из которых нарисован календарь -->
+                    </svg>
+                </span>
+
+                <span class="brand__text">
+                    <!-- Отдельный контейнер для текста названия системы -->
+
+                    <strong>Расписание университета</strong>
+                </span>
+            </a>
+        </header>
+
+        <main class="page-main">
+            <!-- main — основное содержимое страницы -->
+
+            <div class="background-shape background-shape--left" aria-hidden="true"></div>
+            <!-- Декоративный круг слева -->
+            <!-- Он пустой, тк его внешний вид полностью задается через CSS -->
+
+            <div class="background-shape background-shape--right" aria-hidden="true"></div>
+            <!-- Такой же декоративный круг справа -->
+
+            <section class="login-card" aria-labelledby="login-title">
+                <!-- section объединяет отдельный смысловой раздел страницы - карточка авторизации -->
+                <!-- aria-labelledby связывает раздел с заголовком login-title -->
+
+                <div class="login-card__badge" aria-hidden="true">
+                    <!-- Контейнер для декоративной иконки замка -->
+
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <!-- Векторная иконка замка -->
+
+                        <path
+                            d="M8 10V8C8 5.79 9.79 4 12 4C14.21 4 16 5.79 16 8V10M7 10H17C18.1 10 19 10.9 19 12V18C19 19.1 18.1 20 17 20H7C5.9 20 5 19.1 5 18V12C5 10.9 5.9 10 7 10Z"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                        <!-- path рисует сам замок -->
+                    </svg>
+                </div>
+
+                <div class="login-card__heading">
+                    <!-- Этот блок хранит заголовок и пояснение формы -->
+
+                    <h1 class="login-card__title" id="login-title">Вход в систему</h1>
+                    <!-- h1 — главный заголовок страницы -->
+                    <!-- id нужен, чтобы к этому элементу можно было обратиться из CSS, JavaScript или aria-labelledby -->
+
+                    <p class="login-card__subtitle">
+                        <!-- p - обычный текстовый абзац -->
+                        Введите логин и пароль, выданные администратором
+                    </p>
+                </div>
+
+                <div
+                    class="message message--error"
+                    id="login-message"
+                    role="alert"
+                    aria-live="polite"
+                    hidden
+                >
+                    <!-- Блок для общего сообщения об ошибке входа -->
+                    <!-- hidden прячет его при первой загрузке страницы -->
+                    <!-- JavaScript уберет hidden, если нужно показать ошибку -->
+                    <!-- role="alert" помечает этот блок как важное сообщение для польз-ля-->
+
+                    <span class="message__icon" aria-hidden="true">!</span>
+                    <!-- Небольшая иконка с восклицательным знаком -->
+
+                    <div class="message__text">
+                        <!-- Контейнер для текста ошибки -->
+
+                        <strong id="message-title">Неверный логин или пароль</strong>
+                        <!-- Короткий заголовок ошибки -->
+
+                        <span id="message-description">Проверьте данные и попробуйте снова</span>
+                        <!-- Более подробное описание ошибки -->
+                    </div>
+                </div>
+
+                <form class="login-form" id="login-form" novalidate>
+                    <!-- form объединяет поля, которые пользователь должен заполнить -->
+                    <!-- id="login-form" нужен JavaScript, чтобы найти эту форму -->
+                    <!-- novalidate отключает стандартные сообщения браузера -->
+                    <!-- Благодаря этому свои сообщения об ошибках можно показать через JavaScript -->
+
+                    <div class="form-field">
+                        <!-- Один блок формы для логина -->
+
+                        <label class="form-field__label" for="login">Логин</label>
+                        <!-- label — подпись для поля -->
+                        <!-- for="login" связывает подпись с полем, у которого id="login" -->
+                        <!-- Если нажать на слово Логин, курсор перейдет в поле -->
+
+                        <div class="form-field__control">
+                            <!-- Контейнер объединяет иконку и само поле ввода -->
+
+                            <span class="form-field__icon" aria-hidden="true">
+                                <!-- Иконка пользователя внутри поля -->
+
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <!-- Векторная иконка пользователя -->
+
+                                    <path
+                                        d="M19 20C19 16.69 15.87 14 12 14C8.13 14 5 16.69 5 20M12 11C14.21 11 16 9.21 16 7C16 4.79 14.21 3 12 3C9.79 3 8 4.79 8 7C8 9.21 9.79 11 12 11Z"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"
+                                        stroke-linecap="round"
+                                    />
+                                    <!-- path рисует фигуру пользователя -->
+                                </svg>
+                            </span>
+
+                            <input
+                                class="form-field__input"
+                                id="login"
+                                name="login"
+                                type="text"
+                                autocomplete="username"
+                                placeholder="Введите логин"
+                                required
+                            >
+                            <!-- input — поле, куда пользователь вводит данные -->
+                            <!-- autocomplete="username" разрешает браузеру подставлять сохраненный логин -->
+                            <!-- placeholder показывает подсказку внутри пустого поля -->
+                            <!-- required означает, что поле обязательно -->
+                        </div>
+
+                        <span class="form-field__error" id="login-error" hidden>
+                            <!-- Отдельная ошибка для пустого поля логина -->
+                            <!-- Сначала она скрыта через hidden -->
+                            Введите логин
+                        </span>
+                    </div>
+
+                    <div class="form-field">
+                        <!-- Второй блок формы для пароля -->
+
+                        <label class="form-field__label" for="password">Пароль</label>
+                        <!-- Подпись связана с полем password -->
+
+                        <div class="form-field__control">
+                            <!-- Объединяем иконку замка и поле пароля -->
+
+                            <span class="form-field__icon" aria-hidden="true">
+                                <!-- Декоративная иконка замка -->
+
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <!-- Векторная иконка -->
+
+                                    <path
+                                        d="M8 10V8C8 5.79 9.79 4 12 4C14.21 4 16 5.79 16 8V10M7 10H17C18.1 10 19 10.9 19 12V18C19 19.1 18.1 20 17 20H7C5.9 20 5 19.1 5 18V12C5 10.9 5.9 10 7 10Z"
+                                        stroke="currentColor"
+                                        stroke-width="1.7"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    />
+                                    <!-- path рисует замок -->
+                                </svg>
+                            </span>
+
+                            <input
+                                class="form-field__input"
+                                id="password"
+                                name="password"
+                                type="password"
+                                autocomplete="current-password"
+                                placeholder="Введите пароль"
+                                required
+                            >
+                            <!-- type="password" скрывает введенные символы -->
+                            <!-- autocomplete="current-password" помогает браузеру распознать поле пароля -->
+                            <!-- required делает поле обязательным -->
+                        </div>
+
+                        <span class="form-field__error" id="password-error" hidden>
+                            <!-- Ошибка, если пользователь не ввел пароль -->
+                            Введите пароль
+                        </span>
+                    </div>
+
+                    <button class="login-button" id="login-button" type="submit">
+                        <!-- button создает кнопку -->
+                        <!-- type="submit" означает отправить форму при нажатии -->
+                        <!-- JavaScript перехватывает эту отправку и сам выполняет проверку -->
+                        Войти
+                    </button>
+                </form>
+
+                <div class="login-card__help">
+                    <!-- Небольшая подсказка под формой -->
+
+                    <span class="login-card__help-icon" aria-hidden="true">?</span>
+                    <!-- Декоративный знак вопроса -->
+
+                    <p>
+                        <!-- br переносит текст на новую строку -->
+                        Нет доступа или забыли пароль?<br>
+                        Обратитесь к администратору системы
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <footer class="page-footer">
+            <!-- footer — нижняя часть страницы -->
+
+            <span>
+                <!-- span нужен, чтобы текст и ссылка были одной строкой -->
+                Администратор системы:
+
+                <a href="mailto:admin@mail.ru">[Email]</a>
+                <!-- mailto открывает почтовую программу для отправки письма -->
+                <!-- admin@mail.ru пока используется как тестовый адрес -->
+            </span>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- Подключаем JavaScript-файл -->
+    <!-- Он отвечает за проверку формы, ошибки и действия после нажатия Войти -->
+    <!-- Скрипт подключен внизу, чтобы HTML-элементы успели загрузиться раньше него -->
+</body>
+</html>
