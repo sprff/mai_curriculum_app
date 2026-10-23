@@ -8,3 +8,283 @@ servers:
   - url: http://localhost:8080/api/v1
     description: Local server
 
+security:
+  - BearerAuth: []
+
+paths:
+  /ping:
+    get:
+      operationId: Ping
+      security: []
+      responses:
+        '200':
+          description: Pong response
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /users:
+    post:
+      operationId: CreateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublicInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /users/{id}:
+    delete:
+      operationId: DeleteUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /auth/login:
+    post:
+      operationId: AuthLogin
+      description: Authenticate with login and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Tokens issued.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /auth/refresh:
+    post:
+      operationId: AuthRefresh
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/TokensIssued'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/logout:
+    post:
+      operationId: AuthLogout
+      description: Revoke the refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '204':
+          description: Logged out
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/me:
+    get:
+      operationId: AuthMe
+      responses:
+        '200':
+          description: User authenticated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublicInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest: # 400
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized: # 401
+      description: Missing, invalid or expired credentials.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden: # 403
+      description: The authenticated user does not have the required role.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound: # 404
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict: # 409
+      description: Conflict.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    UserRoleEnum:
+      type: string
+      enum:
+        - ADMIN
+        - STUDENT
+        - TEACHER
+    UserPublicInfo:
+      type: object
+      description: Public profile of an account created by an administrator. Contains no credentials.
+      required:
+        - id
+        - login
+        - fullName
+        - role
+      properties:
+        id:
+          type: string
+          description: Unique user identifier.
+          readOnly: true
+        login:
+          type: string
+          minLength: 1
+          description: Unique login used to sign in.
+        fullName:
+          type: string
+          minLength: 1
+          description: User's display name.
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+    AuthTokensInfo:
+      type: object
+      required:
+        - expires_in
+        - access_token
+        - refresh_token
+      properties:
+        expires_in:
+          type: integer
+          minimum: 1
+          description: Access token lifetime in seconds.
+          example: 600
+        access_token:
+          type: string
+          minLength: 1
+          description: JWT token for the Authorization Bearer header.
+        refresh_token:
+          type: string
+          minLength: 1
+          description: Refresh token for refreshing the access token.
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error description.
+
+    # Request/Response schemas
+    CreateUserRequest:
+      type: object
+      description: Account details supplied by an administrator.
+      required:
+        - login
+        - password
+        - fullName
+        - role
+      properties:
+        login:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          format: password
+          minLength: 1
+        fullName:
+          type: string
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+    # UpdateUserRequest:
+    LoginRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          format: password
+          minLength: 1
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: Refresh token received at login or the latest successful refresh.
+
+
