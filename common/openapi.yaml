@@ -73,6 +73,7 @@ paths:
   /auth/login:
     post:
       operationId: AuthLogin
+      security: []
       description: Authenticate with login and password.
       requestBody:
         required: true
@@ -104,7 +105,11 @@ paths:
               $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
-          $ref: '#/components/responses/TokensIssued'
+          description: Tokens refreshed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
 
