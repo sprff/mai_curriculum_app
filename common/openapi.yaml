@@ -44,11 +44,7 @@ paths:
       tags:
       - Authentication
       operationId: AuthLogin
-<<<<<<< Updated upstream
-      description: Authenticate with login and password.
-=======
       security: []
->>>>>>> Stashed changes
       requestBody:
         required: true
         content:
@@ -86,12 +82,6 @@ paths:
               $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
-<<<<<<< Updated upstream
-          $ref: '#/components/responses/TokensIssued'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-=======
           description: Rotated tokens and current account profile.
           content:
             application/json:
@@ -1274,7 +1264,6 @@ paths:
       x-required-roles:
       - teacher
       - student
->>>>>>> Stashed changes
   /auth/logout:
     post:
       tags:
