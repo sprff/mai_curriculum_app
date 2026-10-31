@@ -565,7 +565,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
       x-required-roles:
-      - admin
+        - admin
       description: Creates a classroom with room number, capacity, and active state as shown in the mockup.
   /classrooms/{classroomId}:
     parameters:
