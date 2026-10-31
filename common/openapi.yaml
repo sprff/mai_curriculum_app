@@ -1,79 +1,54 @@
 openapi: 3.1.0
-
 info:
-  title: MAI Curriculum
+  title: MAI Timetable API
   version: 1.0.0
-
+  description: Target frontend/backend contract for the timetable product. The supplied database description does
+    not contain several fields and entities required by the mockup; required schema changes are documented in docs/API_CONTRACT.md.
+    This file excludes the backend-to-generator protocol.
 servers:
-  - url: http://localhost:8080/api/v1
-    description: Local server
-
+- url: http://localhost:8080/api/v1
+  description: Local backend
 security:
-  - BearerAuth: []
-
+- BearerAuth: []
+tags:
+- name: Health
+- name: Authentication
+- name: Dashboard
+- name: Users
+- name: Reference data
+- name: Lesson requirements
+- name: Teacher availability
+- name: Imports
+- name: Generation
+- name: Schedule versions
+- name: Personal schedule
 paths:
   /ping:
     get:
+      tags:
+      - Health
       operationId: Ping
       security: []
       responses:
         '200':
-          description: Pong response
+          description: Backend is available.
           content:
             application/json:
               schema:
                 type: string
-
-  /users:
-    post:
-      operationId: CreateUser
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateUserRequest'
-      responses:
-        '200':
-          description: User created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserPublicInfo'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /users/{id}:
-    delete:
-      operationId: DeleteUser
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: User deleted.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
+              example: pong
+        default:
+          $ref: '#/components/responses/UnexpectedError'
   /auth/login:
     post:
+      tags:
+      - Authentication
       operationId: AuthLogin
+<<<<<<< Updated upstream
       description: Authenticate with login and password.
+=======
+      security: []
+>>>>>>> Stashed changes
       requestBody:
         required: true
         content:
@@ -82,20 +57,27 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Tokens issued.
+          description: Access token, refresh token, and account profile.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthTokensInfo'
+                $ref: '#/components/schemas/AuthResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+      description: Authenticates by login/password. Disabled accounts receive 403 with code ACCOUNT_DISABLED.
   /auth/refresh:
     post:
+      tags:
+      - Authentication
       operationId: AuthRefresh
       security: []
+      description: Refresh-token lifecycle is handled by the auth layer; it is not stored in the timetable tables.
       requestBody:
         required: true
         content:
@@ -104,15 +86,1201 @@ paths:
               $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
+<<<<<<< Updated upstream
           $ref: '#/components/responses/TokensIssued'
         '400':
           $ref: '#/components/responses/BadRequest'
 
+=======
+          description: Rotated tokens and current account profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /auth/me:
+    get:
+      tags:
+      - Authentication
+      operationId: GetCurrentUser
+      responses:
+        '200':
+          description: Current account profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      x-required-roles:
+      - admin
+      - teacher
+      - student
+  /admin/dashboard:
+    get:
+      tags:
+      - Dashboard
+      operationId: GetAdminDashboard
+      description: Reference-data counts and the published version for the requested or active academic period.
+      parameters:
+      - name: periodId
+        in: query
+        required: false
+        description: Academic period to show. If omitted, the active period is used.
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      responses:
+        '200':
+          description: Current database-backed summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboard'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /users:
+    get:
+      tags:
+      - Users
+      operationId: ListUsers
+      parameters:
+      - $ref: '#/components/parameters/Search'
+      - name: isActive
+        in: query
+        schema:
+          type: boolean
+        description: Filter by account state; omit to include both enabled and disabled accounts.
+      - name: role
+        in: query
+        schema:
+          $ref: '#/components/schemas/UserRole'
+      - $ref: '#/components/parameters/GroupId'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Page of accounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCollection'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Users
+      operationId: CreateUser
+      description: Creates an account. For a student, groupId is required; for a teacher, teacherId links an existing
+        teacher profile through teachers.user_id. Password is hashed by the backend and never returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Account created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /users/{userId}:
+    parameters:
+    - name: userId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Users
+      operationId: GetUser
+      responses:
+        '200':
+          description: Account details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Users
+      operationId: UpdateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Updated account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+      description: Updates supplied account fields only. Set groupId or teacherId to null to clear the link; isActive=false
+        disables login without deleting the account.
+    delete:
+      tags:
+      - Users
+      operationId: DeleteUser
+      responses:
+        '204':
+          description: Account deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /groups:
+    get:
+      tags:
+      - Reference data
+      operationId: ListGroups
+      parameters:
+      - $ref: '#/components/parameters/Search'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Page of student groups.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupCollection'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Reference data
+      operationId: CreateGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupWriteRequest'
+      responses:
+        '201':
+          description: Group created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /groups/{groupId}:
+    parameters:
+    - name: groupId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Reference data
+      operationId: GetGroup
+      responses:
+        '200':
+          description: Group data, including the manually maintained student count and the active-period weekly lesson count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Reference data
+      operationId: UpdateGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupRequest'
+      responses:
+        '200':
+          description: Updated group.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    delete:
+      tags:
+      - Reference data
+      operationId: DeleteGroup
+      responses:
+        '204':
+          description: Group deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Group is still referenced by users or lessons.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorsResponse'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /subjects:
+    get:
+      tags:
+      - Reference data
+      operationId: ListSubjects
+      parameters:
+      - $ref: '#/components/parameters/Search'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Page of subjects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubjectCollection'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Reference data
+      operationId: CreateSubject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectWriteRequest'
+      responses:
+        '201':
+          description: Subject created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /subjects/{subjectId}:
+    parameters:
+    - name: subjectId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Reference data
+      operationId: GetSubject
+      responses:
+        '200':
+          description: Subject details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Reference data
+      operationId: UpdateSubject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubjectRequest'
+      responses:
+        '200':
+          description: Updated subject.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    delete:
+      tags:
+      - Reference data
+      operationId: DeleteSubject
+      responses:
+        '204':
+          description: Subject deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Subject is still referenced by teachers or lessons.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorsResponse'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /classrooms:
+    get:
+      tags:
+      - Reference data
+      operationId: ListClassrooms
+      parameters:
+      - $ref: '#/components/parameters/Search'
+      - name: isActive
+        in: query
+        schema:
+          type: boolean
+        description: Filter by active state; omit to include active and inactive rooms.
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Page of classrooms.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassroomCollection'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Reference data
+      operationId: CreateClassroom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassroomWriteRequest'
+      responses:
+        '201':
+          description: Classroom created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+      description: Creates a classroom with room number, capacity, and active state as shown in the mockup.
+  /classrooms/{classroomId}:
+    parameters:
+    - name: classroomId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Reference data
+      operationId: GetClassroom
+      responses:
+        '200':
+          description: Classroom details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Reference data
+      operationId: UpdateClassroom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClassroomRequest'
+      responses:
+        '200':
+          description: Updated classroom.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    delete:
+      tags:
+      - Reference data
+      operationId: DeleteClassroom
+      responses:
+        '204':
+          description: Classroom deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Classroom is still referenced by lessons.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorsResponse'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /teachers:
+    get:
+      tags:
+      - Reference data
+      operationId: ListTeachers
+      parameters:
+      - $ref: '#/components/parameters/Search'
+      - name: subjectId
+        in: query
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Page of teachers with subject links read from teacher_subjects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherCollection'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Reference data
+      operationId: CreateTeacher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeacherRequest'
+      responses:
+        '201':
+          description: Teacher profile and teacher_subjects links created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /teachers/{teacherId}:
+    parameters:
+    - name: teacherId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Reference data
+      operationId: GetTeacher
+      responses:
+        '200':
+          description: Teacher profile and linked subjects.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Reference data
+      operationId: UpdateTeacher
+      description: If subjectIds is present, it replaces the teacher_subjects rows for this teacher.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeacherRequest'
+      responses:
+        '200':
+          description: Updated teacher profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    delete:
+      tags:
+      - Reference data
+      operationId: DeleteTeacher
+      responses:
+        '204':
+          description: Teacher deleted.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Teacher is still referenced by lessons or an account.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorsResponse'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /schedule-versions:
+    get:
+      tags:
+      - Schedule versions
+      operationId: ListScheduleVersions
+      parameters:
+      - name: periodId
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/ScheduleVersionStatus'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Page of versions linked to the requested academic period.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleVersionCollection'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      description: Lists schedule versions for one academic period. Generation metrics are derived or read from
+        the stored generation snapshot.
+      x-required-roles:
+      - admin
+  /schedule-versions/compare:
+    get:
+      tags:
+      - Schedule versions
+      operationId: CompareScheduleVersions
+      description: Compares requirements occurrences using the stable key (requirementId, weekStartDate, occurrenceIndex).
+        The source database has no such requirement/occurrence key; it is part of the required schema extension.
+      parameters:
+      - name: versionAId
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: versionBId
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      responses:
+        '200':
+          description: Lessons present in only one of the selected versions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleComparison'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /schedule-versions/{versionId}:
+    parameters:
+    - name: versionId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Schedule versions
+      operationId: GetScheduleVersion
+      responses:
+        '200':
+          description: Version metadata and derived lesson count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleVersion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Schedule versions
+      operationId: RenameScheduleVersion
+      description: Only the stored version name is editable through this operation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameScheduleVersionRequest'
+      responses:
+        '200':
+          description: Renamed version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleVersion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    delete:
+      tags:
+      - Schedule versions
+      operationId: DeleteScheduleVersion
+      description: Only a draft version that is not the published version can be deleted.
+      responses:
+        '204':
+          description: Draft deleted with its lesson-version links.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /schedule-versions/{versionId}/copy:
+    post:
+      tags:
+      - Schedule versions
+      operationId: CopyScheduleVersion
+      description: Creates a draft that initially links the source lesson rows. Before a shared lesson is edited,
+        the backend performs copy-on-write so another version's schedule is unchanged.
+      parameters:
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CopyScheduleVersionRequest'
+      responses:
+        '201':
+          description: Independent draft copy created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleVersion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /schedule-versions/{versionId}/schedule:
+    get:
+      tags:
+      - Schedule versions
+      operationId: GetVersionSchedule
+      parameters:
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: weekStartDate
+        in: query
+        required: true
+        description: Monday of the requested week, which must lie within the version period.
+        schema:
+          type: string
+          format: date
+      - $ref: '#/components/parameters/GroupId'
+      - name: teacherId
+        in: query
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: classroomId
+        in: query
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: subjectId
+        in: query
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: lessonType
+        in: query
+        schema:
+          $ref: '#/components/schemas/LessonType'
+      - $ref: '#/components/parameters/DayOfWeek'
+      responses:
+        '200':
+          description: Version schedule for the requested week.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleView'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      x-required-roles:
+      - admin
+  /schedule-versions/{versionId}/validation:
+    get:
+      tags:
+      - Schedule versions
+      operationId: ValidateScheduleVersion
+      description: Recomputes schedule conflicts from the lessons linked to this version. Conflict details are derived
+        and are not stored in the timetable tables.
+      parameters:
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: weekStartDate
+        in: query
+        required: false
+        description: If supplied, return conflicts limited to this Monday-Saturday week.
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Current validation result for the version, optionally limited to one week.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleValidation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /schedule-versions/{versionId}/lessons:
+    parameters:
+    - name: versionId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Schedule versions
+      operationId: ListVersionLessons
+      parameters:
+      - name: dateFrom
+        in: query
+        schema:
+          type: string
+          format: date
+        description: Inclusive lower bound on lessons.date.
+      - name: dateTo
+        in: query
+        schema:
+          type: string
+          format: date
+        description: Inclusive upper bound on lessons.date; must be on or after dateFrom.
+      - $ref: '#/components/parameters/GroupId'
+      - name: teacherId
+        in: query
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: classroomId
+        in: query
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: subjectId
+        in: query
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: lessonType
+        in: query
+        schema:
+          $ref: '#/components/schemas/LessonType'
+      - $ref: '#/components/parameters/DayOfWeek'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Lesson rows joined through lesson_version_items.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonCollection'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Schedule versions
+      operationId: CreateVersionLesson
+      description: Creates a lesson row and its lesson_version_items link in one transaction. Draft versions only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonWriteRequest'
+      responses:
+        '201':
+          description: Lesson created in the version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /schedule-versions/{versionId}/lessons/{lessonId}:
+    parameters:
+    - name: versionId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    - name: lessonId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Schedule versions
+      operationId: GetVersionLesson
+      responses:
+        '200':
+          description: Lesson linked to this version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Schedule versions
+      operationId: UpdateVersionLesson
+      description: Updates a lesson in a draft; shared rows are copied before mutation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLessonRequest'
+      responses:
+        '200':
+          description: Updated lesson.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lesson'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+    delete:
+      tags:
+      - Schedule versions
+      operationId: DeleteVersionLesson
+      description: Removes the version link and deletes the lesson row when no version references it.
+      responses:
+        '204':
+          description: Lesson removed from the draft.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /schedule-versions/{versionId}/publish:
+    post:
+      tags:
+      - Schedule versions
+      operationId: PublishScheduleVersion
+      description: Publishes this version for its academic period and updates that period’s published-version pointer.
+        A version with blocking conflicts is not published; 409 returns the full validation report.
+      parameters:
+      - name: versionId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      responses:
+        '200':
+          description: Newly published version; the previous publication is archived.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleVersion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/PublishRejected'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      x-required-roles:
+      - admin
+  /me/schedule:
+    get:
+      tags:
+      - Personal schedule
+      operationId: GetMySchedule
+      description: Resolves the published version for the academic period containing weekStartDate. Students are
+        scoped by users.group_id; teachers are resolved through teachers.user_id. Draft and other users’ schedules
+        are never returned.
+      parameters:
+      - name: weekStartDate
+        in: query
+        required: true
+        description: Monday of the displayed week.
+        schema:
+          type: string
+          format: date
+      responses:
+        '200':
+          description: Published schedule for the authenticated account's group or teacher profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalScheduleView'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+      x-required-roles:
+      - teacher
+      - student
+>>>>>>> Stashed changes
   /auth/logout:
     post:
+      tags:
+      - Authentication
       operationId: AuthLogout
-      description: Revoke the refresh token
-      security: []
+      description: Revokes the supplied refresh token. The client also clears its local access token.
       requestBody:
         required: true
         content:
@@ -121,170 +1289,2535 @@ paths:
               $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '204':
-          description: Logged out
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /auth/me:
+          description: Refresh token revoked.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      x-required-roles:
+      - admin
+      - teacher
+      - student
+  /timetable-slots:
     get:
-      operationId: AuthMe
+      tags:
+      - Reference data
+      operationId: ListTimetableSlots
+      description: Returns the seven configured lesson periods used to label the timetable grid. Times come from
+        backend configuration; they are not stored in the timetable tables.
       responses:
         '200':
-          description: User authenticated.
+          description: Configured lesson periods, ordered by lesson number.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserPublicInfo'
+                $ref: '#/components/schemas/TimetableSlotCollection'
         '401':
           $ref: '#/components/responses/Unauthorized'
-
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      x-required-roles:
+      - admin
+      - teacher
+      - student
+  /schedule-periods:
+    get:
+      tags:
+      - Reference data
+      operationId: ListSchedulePeriods
+      description: Periods shown in the schedule/version selector. Period dates are inclusive and do not overlap.
+      responses:
+        '200':
+          description: Academic schedule periods.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulePeriodCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      x-required-roles:
+      - admin
+      - teacher
+      - student
+  /lesson-requirements:
+    get:
+      tags:
+      - Lesson requirements
+      operationId: ListLessonRequirements
+      description: Lists the source requirements used for readiness checks and schedule generation. A requirement
+        is not a scheduled lesson occurrence.
+      responses:
+        '200':
+          description: Page of requirements.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonRequirementCollection'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: periodId
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: groupId
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: teacherId
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: subjectId
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Lesson requirements
+      operationId: CreateLessonRequirement
+      description: Creates the group/subject/teacher/type and weekly-frequency requirement shown in the mockup.
+        The backend verifies that the teacher is linked to the subject.
+      responses:
+        '201':
+          description: Requirement created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonRequirement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LessonRequirementWriteRequest'
+      x-required-roles:
+      - admin
+  /lesson-requirements/{requirementId}:
+    parameters:
+    - name: requirementId
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    get:
+      tags:
+      - Lesson requirements
+      operationId: GetLessonRequirement
+      description: Returns one source requirement.
+      responses:
+        '200':
+          description: Requirement details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonRequirement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      x-required-roles:
+      - admin
+    patch:
+      tags:
+      - Lesson requirements
+      operationId: UpdateLessonRequirement
+      description: Updates a source requirement. Existing versions remain unchanged because they contain scheduled
+        lesson snapshots.
+      responses:
+        '200':
+          description: Updated requirement.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonRequirement'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLessonRequirementRequest'
+      x-required-roles:
+      - admin
+    delete:
+      tags:
+      - Lesson requirements
+      operationId: DeleteLessonRequirement
+      description: Deletes a requirement that is not referenced by generated schedule occurrences.
+      responses:
+        '204':
+          description: Requirement deleted.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      x-required-roles:
+      - admin
+  /me/teacher-availability:
+    get:
+      tags:
+      - Teacher availability
+      operationId: GetMyTeacherAvailability
+      description: Returns the effective six-day by seven-slot grid for a week. A week-specific grid overrides the
+        period-wide template.
+      responses:
+        '200':
+          description: Effective teacher availability.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherAvailability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: weekStartDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+        description: Monday of the selected week; its academic period is resolved by the backend.
+      x-required-roles:
+      - teacher
+    put:
+      tags:
+      - Teacher availability
+      operationId: UpdateMyTeacherAvailability
+      description: Replaces the full 42-cell grid for one week, or applies the selected grid to every week in the
+        academic period containing weekStartDate and clears prior week overrides. The request must contain exactly
+        one cell for every day/lesson pair.
+      responses:
+        '200':
+          description: Availability saved. Conflicts with the already published schedule are included for notification.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherAvailabilityUpdateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTeacherAvailabilityRequest'
+      x-required-roles:
+      - teacher
+  /teachers/{teacherId}/availability:
+    get:
+      tags:
+      - Teacher availability
+      operationId: GetTeacherAvailability
+      description: Administrator view of a teacher availability grid for a selected period and week.
+      responses:
+        '200':
+          description: Effective availability.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherAvailability'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: teacherId
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: weekStartDate
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+        description: Monday of the selected week; its academic period is resolved by the backend.
+      x-required-roles:
+      - admin
+  /admin/imports/templates/{entityType}:
+    get:
+      tags:
+      - Imports
+      operationId: GetImportTemplate
+      description: Downloads an empty UTF-8 CSV template with the exact header columns accepted by the preview endpoint.
+      responses:
+        '200':
+          description: CSV template.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: entityType
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/ImportEntityType'
+      x-required-roles:
+      - admin
+  /admin/imports:
+    post:
+      tags:
+      - Imports
+      operationId: PreviewImport
+      description: Parses and validates a CSV without saving rows. The preview is temporary and expires at expiresAt.
+        CSV is UTF-8 with a header row and comma delimiter; valid rows can later be imported while invalid rows
+        are skipped.
+      responses:
+        '201':
+          description: Import preview created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportUploadRequest'
+      x-required-roles:
+      - admin
+  /admin/imports/{importId}/confirm:
+    post:
+      tags:
+      - Imports
+      operationId: ConfirmImport
+      description: Persists valid preview rows in one transaction and skips every row with validation errors. The
+        import preview ID is single-use.
+      responses:
+        '200':
+          description: Import completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: importId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      x-required-roles:
+      - admin
+  /admin/generation/settings:
+    get:
+      tags:
+      - Generation
+      operationId: GetGenerationSettings
+      description: Returns the saved default generation criteria and time limit.
+      responses:
+        '200':
+          description: Default generation settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      x-required-roles:
+      - admin
+    put:
+      tags:
+      - Generation
+      operationId: UpdateGenerationSettings
+      description: Replaces saved default generation settings.
+      responses:
+        '200':
+          description: Saved generation settings.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerationSettingsWriteRequest'
+      x-required-roles:
+      - admin
+  /admin/generation/readiness:
+    get:
+      tags:
+      - Generation
+      operationId: CheckGenerationReadiness
+      description: Checks whether source requirements and reference data can produce a schedule. Errors block generation;
+        warnings do not.
+      responses:
+        '200':
+          description: Readiness report.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationReadiness'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: periodId
+        in: query
+        required: true
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      x-required-roles:
+      - admin
+  /admin/generation-jobs:
+    get:
+      tags:
+      - Generation
+      operationId: ListGenerationJobs
+      description: Lists generation jobs for the administrator task/history view.
+      responses:
+        '200':
+          description: Page of generation jobs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationJobCollection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: periodId
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/DatabaseId'
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/GenerationJobStatus'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      x-required-roles:
+      - admin
+    post:
+      tags:
+      - Generation
+      operationId: CreateGenerationJob
+      description: Creates a background generation job. The frontend polls the job resource; generator transport
+        is outside this contract.
+      responses:
+        '202':
+          description: Generation job accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGenerationJobRequest'
+      x-required-roles:
+      - admin
+  /admin/generation-jobs/{jobId}:
+    get:
+      tags:
+      - Generation
+      operationId: GetGenerationJob
+      description: Returns the current generation job state and progress for polling.
+      responses:
+        '200':
+          description: Current job state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      x-required-roles:
+      - admin
+  /admin/generation-jobs/{jobId}/cancel:
+    post:
+      tags:
+      - Generation
+      operationId: CancelGenerationJob
+      description: Requests cancellation of a queued or running job.
+      responses:
+        '202':
+          description: Cancellation accepted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationJob'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      x-required-roles:
+      - admin
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
+  parameters:
+    Search:
+      name: search
+      in: query
+      description: Case-insensitive search over the entity's display name or identifier.
+      schema:
+        type: string
+        maxLength: 200
+    GroupId:
+      name: groupId
+      in: query
+      schema:
+        $ref: '#/components/schemas/DatabaseId'
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 200
+        default: 50
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+    DayOfWeek:
+      name: dayOfWeek
+      in: query
+      description: ISO weekday derived from lessons.date; the timetable uses Monday through Saturday.
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 6
   responses:
-    BadRequest: # 400
-      description: Invalid request.
+    BadRequest:
+      description: Invalid request syntax or parameter.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized: # 401
-      description: Missing, invalid or expired credentials.
+            $ref: '#/components/schemas/ErrorsResponse'
+    Unauthorized:
+      description: Missing, invalid, or expired credentials.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    Forbidden: # 403
-      description: The authenticated user does not have the required role.
+            $ref: '#/components/schemas/ErrorsResponse'
+    Forbidden:
+      description: The account does not have access to this operation.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    NotFound: # 404
+            $ref: '#/components/schemas/ErrorsResponse'
+    NotFound:
       description: Resource not found.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    Conflict: # 409
-      description: Conflict.
+            $ref: '#/components/schemas/ErrorsResponse'
+    Conflict:
+      description: Resource conflicts with an existing database relationship or state.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-
+            $ref: '#/components/schemas/ErrorsResponse'
+    UnprocessableEntity:
+      description: Request is valid JSON but violates a domain constraint.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    UnexpectedError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    PayloadTooLarge:
+      description: Uploaded file exceeds the configured size limit.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    PublishRejected:
+      description: Version contains blocking conflicts and remains a draft.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PublishRejected'
   schemas:
-    UserRoleEnum:
+    DatabaseId:
+      type: integer
+      format: int32
+      minimum: 1
+      description: Positive PostgreSQL serial/integer identifier.
+    UserRole:
       type: string
       enum:
-        - ADMIN
-        - STUDENT
-        - TEACHER
-    UserPublicInfo:
-      type: object
-      description: Public profile of an account created by an administrator. Contains no credentials.
-      required:
-        - id
-        - login
-        - fullName
-        - role
-      properties:
-        id:
-          type: string
-          description: Unique user identifier.
-          readOnly: true
-        login:
-          type: string
-          minLength: 1
-          description: Unique login used to sign in.
-        fullName:
-          type: string
-          minLength: 1
-          description: User's display name.
-        role:
-          $ref: '#/components/schemas/UserRoleEnum'
-    AuthTokensInfo:
-      type: object
-      required:
-        - expires_in
-        - access_token
-        - refresh_token
-      properties:
-        expires_in:
-          type: integer
-          minimum: 1
-          description: Access token lifetime in seconds.
-          example: 600
-        access_token:
-          type: string
-          minLength: 1
-          description: JWT token for the Authorization Bearer header.
-        refresh_token:
-          type: string
-          minLength: 1
-          description: Refresh token for refreshing the access token.
-    Error:
-      type: object
-      required:
-        - code
-        - message
-      properties:
-        code:
-          type: string
-          description: Machine-readable error code.
-        message:
-          type: string
-          description: Human-readable error description.
-
-    # Request/Response schemas
-    CreateUserRequest:
-      type: object
-      description: Account details supplied by an administrator.
-      required:
-        - login
-        - password
-        - fullName
-        - role
-      properties:
-        login:
-          type: string
-          minLength: 1
-        password:
-          type: string
-          format: password
-          minLength: 1
-        fullName:
-          type: string
-          minLength: 1
-        role:
-          $ref: '#/components/schemas/UserRoleEnum'
-    # UpdateUserRequest:
+      - admin
+      - teacher
+      - student
+      description: Values of the users.role database enum.
+    LessonType:
+      type: string
+      enum:
+      - lection
+      - practice
+      - lab work
+      description: Values of the lessons.lesson_type database enum.
+    ScheduleVersionStatus:
+      type: string
+      enum:
+      - draft
+      - published
+      - archived
+      description: Values of the lessons_versions.status database enum.
     LoginRequest:
       type: object
       required:
-        - login
-        - password
+      - login
+      - password
       properties:
         login:
           type: string
-          minLength: 1
         password:
           type: string
           format: password
-          minLength: 1
+          writeOnly: true
     RefreshTokenRequest:
       type: object
       required:
-        - refresh_token
+      - refresh_token
       properties:
         refresh_token:
           type: string
-          minLength: 1
           writeOnly: true
-          description: Refresh token received at login or the latest successful refresh.
-
-
+    AuthResponse:
+      type: object
+      required:
+      - access_token
+      - refresh_token
+      - expires_in
+      - user
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Access-token lifetime in seconds.
+        user:
+          $ref: '#/components/schemas/User'
+    User:
+      type: object
+      required:
+      - id
+      - role
+      - name
+      - login
+      - email
+      - groupId
+      - teacherId
+      - isActive
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        name:
+          type: string
+        login:
+          type: string
+        email:
+          type: string
+          format: email
+        groupId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          readOnly: true
+          description: Stored users.group_id.
+        teacherId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          readOnly: true
+          description: Derived through teachers.user_id; there is no users.teacher_id column.
+        isActive:
+          type: boolean
+          description: Account login is allowed only while true. Requires the users.is_active migration.
+          x-requires-db-migration: true
+      description: Account fields map to users; teacherId is derived through teachers.user_id.
+      x-db-table: users
+      x-requires-db-migration: true
+    CreateUserRequest:
+      type: object
+      required:
+      - role
+      - name
+      - login
+      - email
+      - password
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        name:
+          type: string
+          minLength: 1
+        login:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          writeOnly: true
+        groupId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Required for student accounts; maps to users.group_id.
+        teacherId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Required for teacher accounts; links through teachers.user_id.
+      description: For student, groupId is required. For teacher, teacherId must identify an unlinked teacher profile.
+    UpdateUserRequest:
+      type: object
+      required: []
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        name:
+          type: string
+          minLength: 1
+        login:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          writeOnly: true
+        groupId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+        teacherId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+        isActive:
+          type: boolean
+          description: False disables login while preserving the account.
+      description: Only supplied fields are updated; changing role also requires valid role-specific links.
+      minProperties: 1
+    Group:
+      type: object
+      required:
+      - id
+      - groupName
+      - studentCount
+      - weeklyLessonCount
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        groupName:
+          type: string
+        studentCount:
+          type: integer
+          format: int32
+          minimum: 1
+          x-requires-db-migration: true
+        weeklyLessonCount:
+          type: integer
+          format: int32
+          minimum: 0
+          readOnly: true
+          description: Sum of lessonsPerWeek for this group's requirements in the active academic period; displayed in the groups table.
+      description: Student count is entered explicitly. Weekly lesson count is derived from lesson requirements.
+      x-db-table: groups
+      x-requires-db-migration: true
+    GroupWriteRequest:
+      type: object
+      required:
+      - groupName
+      - studentCount
+      properties:
+        groupName:
+          type: string
+          minLength: 1
+        studentCount:
+          type: integer
+          format: int32
+          minimum: 1
+    GroupCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Group'
+    Subject:
+      type: object
+      required:
+      - id
+      - name
+      - code
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        name:
+          type: string
+        code:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+          description: Optional unique internal code shown in the mockup.
+          x-requires-db-migration: true
+      description: The weekly lesson count belongs to a group-specific lesson requirement, not to the subject.
+      x-db-table: subjects
+      x-requires-db-migration: true
+    SubjectWriteRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+        code:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+    UpdateSubjectRequest:
+      type: object
+      required: []
+      properties:
+        name:
+          type: string
+          minLength: 1
+        code:
+          type:
+          - string
+          - 'null'
+          maxLength: 100
+      minProperties: 1
+    SubjectCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Subject'
+    Classroom:
+      type: object
+      required:
+      - id
+      - roomNumber
+      - capacity
+      - isActive
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        roomNumber:
+          type: string
+          maxLength: 10
+        capacity:
+          type: integer
+          format: int32
+          minimum: 1
+        isActive:
+          type: boolean
+          description: Inactive classrooms cannot be assigned to new lessons.
+          x-requires-db-migration: true
+      description: Requires the classrooms.active column; floor is not part of the mockup or target API.
+      x-db-table: classrooms
+      x-requires-db-migration: true
+    ClassroomWriteRequest:
+      type: object
+      required:
+      - roomNumber
+      - capacity
+      - isActive
+      properties:
+        roomNumber:
+          type: string
+          minLength: 1
+          maxLength: 10
+        capacity:
+          type: integer
+          format: int32
+          minimum: 1
+        isActive:
+          type: boolean
+    UpdateClassroomRequest:
+      type: object
+      required: []
+      properties:
+        roomNumber:
+          type: string
+          minLength: 1
+          maxLength: 10
+        capacity:
+          type: integer
+          format: int32
+          minimum: 1
+        isActive:
+          type: boolean
+      minProperties: 1
+    ClassroomCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Classroom'
+    Teacher:
+      type: object
+      x-db-table: teachers
+      required:
+      - id
+      - name
+      - userId
+      - subjectIds
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        name:
+          type: string
+        userId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Stored teachers.user_id; nullable.
+        subjectIds:
+          type: array
+          readOnly: true
+          description: Derived from teacher_subjects; not a column in teachers.
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+    CreateTeacherRequest:
+      type: object
+      required:
+      - name
+      - subjectIds
+      properties:
+        name:
+          type: string
+          minLength: 1
+        userId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+        subjectIds:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+    UpdateTeacherRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        userId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Set null to clear teachers.user_id.
+        subjectIds:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+    TeacherCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Teacher'
+    Lesson:
+      type: object
+      required:
+      - id
+      - requirementId
+      - occurrenceIndex
+      - date
+      - lessonNumber
+      - groupId
+      - teacherId
+      - classroomId
+      - subjectId
+      - lessonType
+      - groupName
+      - teacherName
+      - roomNumber
+      - subjectName
+      - dayOfWeek
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        requirementId:
+          $ref: '#/components/schemas/DatabaseId'
+          x-requires-db-migration: true
+        occurrenceIndex:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 42
+          description: Stable occurrence number within a requirement and academic week; used to compare versions.
+          x-requires-db-migration: true
+          readOnly: true
+        date:
+          type: string
+          format: date
+        lessonNumber:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        groupId:
+          $ref: '#/components/schemas/DatabaseId'
+        teacherId:
+          $ref: '#/components/schemas/DatabaseId'
+        classroomId:
+          $ref: '#/components/schemas/DatabaseId'
+        subjectId:
+          $ref: '#/components/schemas/DatabaseId'
+        lessonType:
+          $ref: '#/components/schemas/LessonType'
+        groupName:
+          type: string
+          readOnly: true
+        teacherName:
+          type: string
+          readOnly: true
+        roomNumber:
+          type: string
+          readOnly: true
+        subjectName:
+          type: string
+          readOnly: true
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 6
+          readOnly: true
+          description: ISO weekday computed from date.
+      description: A scheduled occurrence (date, pair number and classroom), distinct from its source LessonRequirement.
+      x-db-table: lessons
+      x-requires-db-migration: true
+    LessonWriteRequest:
+      type: object
+      required:
+      - requirementId
+      - occurrenceIndex
+      - date
+      - lessonNumber
+      - classroomId
+      properties:
+        requirementId:
+          $ref: '#/components/schemas/DatabaseId'
+        occurrenceIndex:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 42
+        date:
+          type: string
+          format: date
+        lessonNumber:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        classroomId:
+          $ref: '#/components/schemas/DatabaseId'
+        teacherId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          description: Optional qualified-teacher override for this occurrence; null uses the requirement teacher.
+      description: Group, subject, type and default teacher are derived from the requirement; classroom and time
+        assignment are schedule data.
+    UpdateLessonRequest:
+      type: object
+      required: []
+      properties:
+        date:
+          type: string
+          format: date
+        lessonNumber:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        classroomId:
+          $ref: '#/components/schemas/DatabaseId'
+        teacherId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+      description: Only assignment fields can change. Setting teacherId to null restores the requirement teacher;
+        the supplied teacher must be qualified for the requirement subject.
+      minProperties: 1
+    LessonCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/Lesson'
+    ScheduleVersion:
+      type: object
+      required:
+      - id
+      - periodId
+      - periodName
+      - name
+      - status
+      - creationTime
+      - lessonCount
+      - qualityMetrics
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+          x-requires-db-migration: true
+        periodName:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/ScheduleVersionStatus'
+        creationTime:
+          type: string
+          format: date-time
+        lessonCount:
+          type: integer
+          format: int64
+          minimum: 0
+          readOnly: true
+        generationParameters:
+          oneOf:
+          - $ref: '#/components/schemas/GenerationParameters'
+          - type: 'null'
+          readOnly: true
+          x-requires-db-migration: true
+        qualityMetrics:
+          $ref: '#/components/schemas/ScheduleQualityMetrics'
+      description: Version belongs to one period. Requires period and generation metadata on the version.
+      x-db-table: lessons_versions
+      x-requires-db-migration: true
+    RenameScheduleVersionRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+    CopyScheduleVersionRequest:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+    ScheduleVersionCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ScheduleVersion'
+    ScheduleComparison:
+      type: object
+      required:
+      - versionA
+      - versionB
+      - differentAssignmentCount
+      - changes
+      properties:
+        versionA:
+          $ref: '#/components/schemas/ScheduleVersion'
+        versionB:
+          $ref: '#/components/schemas/ScheduleVersion'
+        differentAssignmentCount:
+          type: integer
+          format: int64
+          minimum: 0
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleChange'
+    ScheduleValidation:
+      type: object
+      required:
+      - versionId
+      - isPublishable
+      - conflicts
+      properties:
+        versionId:
+          $ref: '#/components/schemas/DatabaseId'
+        isPublishable:
+          type: boolean
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleConflict'
+    ScheduleConflict:
+      type: object
+      required:
+      - code
+      - severity
+      - message
+      - lessonIds
+      properties:
+        code:
+          type: string
+        severity:
+          type: string
+          enum:
+          - blocking
+          - warning
+        message:
+          type: string
+        lessonIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+          uniqueItems: true
+        groupId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        teacherId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        classroomId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        date:
+          type:
+          - string
+          - 'null'
+          format: date
+        lessonNumber:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          minimum: 1
+          maximum: 7
+      description: Conflict details are computed at read/publish time.
+    ScheduleView:
+      type: object
+      required:
+      - version
+      - weekStartDate
+      - weekEndDate
+      - lessons
+      - weekMetrics
+      properties:
+        version:
+          $ref: '#/components/schemas/ScheduleVersion'
+        weekStartDate:
+          type: string
+          format: date
+        weekEndDate:
+          type: string
+          format: date
+          description: Saturday of the selected week.
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+        weekMetrics:
+          $ref: '#/components/schemas/ScheduleWeekMetrics'
+      description: Version-wide score and conflict totals are in version.qualityMetrics; weekMetrics reports daily loads for this displayed week.
+    PersonalScheduleView:
+      type: object
+      required:
+      - version
+      - period
+      - weekStartDate
+      - weekEndDate
+      - lessons
+      properties:
+        version:
+          $ref: '#/components/schemas/ScheduleVersion'
+        period:
+          $ref: '#/components/schemas/SchedulePeriod'
+        weekStartDate:
+          type: string
+          format: date
+        weekEndDate:
+          type: string
+          format: date
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+    PageInfo:
+      type: object
+      required:
+      - total
+      - limit
+      - offset
+      properties:
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+        limit:
+          type: integer
+          format: int32
+          minimum: 1
+        offset:
+          type: integer
+          format: int32
+          minimum: 0
+    UserCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'
+    AdminDashboard:
+      type: object
+      required:
+      - counts
+      - publishedVersion
+      - latestGenerationJob
+      - notifications
+      properties:
+        counts:
+          type: object
+          required:
+          - groups
+          - teachers
+          - classrooms
+          - subjects
+          - lessonRequirements
+          properties:
+            groups:
+              type: integer
+              format: int64
+              minimum: 0
+            teachers:
+              type: integer
+              format: int64
+              minimum: 0
+            classrooms:
+              type: integer
+              format: int64
+              minimum: 0
+            subjects:
+              type: integer
+              format: int64
+              minimum: 0
+            lessonRequirements:
+              type: integer
+              format: int64
+              minimum: 0
+              description: Number of group/subject lesson requirements in the active period shown as lessons in the dashboard.
+          description: "Counts shown in the five dashboard cards: groups, teachers, classrooms, subjects, lesson requirements."
+        publishedVersion:
+          oneOf:
+          - $ref: '#/components/schemas/ScheduleVersion'
+          - type: 'null'
+        latestGenerationJob:
+          oneOf:
+          - $ref: '#/components/schemas/GenerationJob'
+          - type: 'null'
+        notifications:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardNotification'
+    ErrorItem:
+      type: object
+      required:
+      - message
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+        field:
+          type: string
+    ErrorsResponse:
+      type: object
+      required:
+      - errors
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+    GenerationJobStatus:
+      type: string
+      enum:
+      - queued
+      - running
+      - succeeded
+      - failed
+      - cancelled
+    ImportEntityType:
+      type: string
+      enum:
+      - classrooms
+      - groups
+      - lessonRequirements
+      - subjects
+      - teachers
+    AvailabilityState:
+      type: string
+      enum:
+      - available
+      - unavailable
+      - preferred
+    ScheduleChangeType:
+      type: string
+      enum:
+      - added
+      - removed
+      - changed
+    GenerationIssueSeverity:
+      type: string
+      enum:
+      - error
+      - warning
+    SchedulePeriod:
+      type: object
+      required:
+      - id
+      - name
+      - startsOn
+      - endsOn
+      - isActive
+      - publishedVersionId
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        name:
+          type: string
+        startsOn:
+          type: string
+          format: date
+        endsOn:
+          type: string
+          format: date
+        isActive:
+          type: boolean
+        publishedVersionId:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          readOnly: true
+      description: Academic period selected in schedule and version screens. Requires academic_periods.
+      x-db-table: academic_periods
+      x-requires-db-migration: true
+    SchedulePeriodCollection:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchedulePeriod'
+    TimetableSlot:
+      type: object
+      required:
+      - lessonNumber
+      - startsAt
+      - endsAt
+      properties:
+        lessonNumber:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        startsAt:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          description: Local lesson start time in HH:MM format.
+        endsAt:
+          type: string
+          pattern: '^([01]\d|2[0-3]):[0-5]\d$'
+          description: Local lesson end time in HH:MM format.
+      description: Times are provided from backend configuration, not from a relational table.
+    TimetableSlotCollection:
+      type: object
+      required:
+      - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimetableSlot'
+          minItems: 7
+          maxItems: 7
+    LessonRequirement:
+      type: object
+      required:
+      - id
+      - periodId
+      - groupId
+      - subjectId
+      - teacherId
+      - lessonType
+      - lessonsPerWeek
+      - allowedDaysOfWeek
+      properties:
+        id:
+          $ref: '#/components/schemas/DatabaseId'
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+        groupId:
+          $ref: '#/components/schemas/DatabaseId'
+        subjectId:
+          $ref: '#/components/schemas/DatabaseId'
+        teacherId:
+          $ref: '#/components/schemas/DatabaseId'
+        lessonType:
+          $ref: '#/components/schemas/LessonType'
+        lessonsPerWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 42
+        allowedDaysOfWeek:
+          type: array
+          items:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 6
+          minItems: 1
+          maxItems: 6
+          uniqueItems: true
+      description: 'Source input for generation: group, subject, qualified teacher, class type, weekly frequency
+        and allowed weekdays. Requires lesson_requirements and its day relation.'
+      x-db-table: lesson_requirements
+      x-requires-db-migration: true
+    LessonRequirementWriteRequest:
+      type: object
+      required:
+      - periodId
+      - groupId
+      - subjectId
+      - teacherId
+      - lessonType
+      - lessonsPerWeek
+      - allowedDaysOfWeek
+      properties:
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+        groupId:
+          $ref: '#/components/schemas/DatabaseId'
+        subjectId:
+          $ref: '#/components/schemas/DatabaseId'
+        teacherId:
+          $ref: '#/components/schemas/DatabaseId'
+        lessonType:
+          $ref: '#/components/schemas/LessonType'
+        lessonsPerWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 42
+        allowedDaysOfWeek:
+          type: array
+          items:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 6
+          minItems: 1
+          maxItems: 6
+          uniqueItems: true
+    UpdateLessonRequirementRequest:
+      type: object
+      required: []
+      properties:
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+        groupId:
+          $ref: '#/components/schemas/DatabaseId'
+        subjectId:
+          $ref: '#/components/schemas/DatabaseId'
+        teacherId:
+          $ref: '#/components/schemas/DatabaseId'
+        lessonType:
+          $ref: '#/components/schemas/LessonType'
+        lessonsPerWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 42
+        allowedDaysOfWeek:
+          type: array
+          items:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 6
+          minItems: 1
+          maxItems: 6
+          uniqueItems: true
+      minProperties: 1
+    LessonRequirementCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/LessonRequirement'
+    TeacherAvailabilitySlot:
+      type: object
+      required:
+      - dayOfWeek
+      - lessonNumber
+      - state
+      properties:
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 6
+        lessonNumber:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        state:
+          $ref: '#/components/schemas/AvailabilityState'
+      description: The UI edits the availability state only. Numeric scoring weights are backend policy, not user
+        input.
+    TeacherAvailability:
+      type: object
+      required:
+      - teacherId
+      - periodId
+      - weekStartDate
+      - sourceScope
+      - items
+      properties:
+        teacherId:
+          $ref: '#/components/schemas/DatabaseId'
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+        weekStartDate:
+          type: string
+          format: date
+        sourceScope:
+          type: string
+          enum:
+          - weekOverride
+          - periodDefault
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeacherAvailabilitySlot'
+          minItems: 42
+          maxItems: 42
+          uniqueItems: true
+      description: Effective Monday-Saturday, seven-slot grid for the requested week. Requires week-aware teacher
+        availability storage.
+      x-requires-db-migration: true
+      x-unique-cell-key:
+      - dayOfWeek
+      - lessonNumber
+    UpdateTeacherAvailabilityRequest:
+      type: object
+      required:
+      - weekStartDate
+      - scope
+      - items
+      properties:
+        weekStartDate:
+          type: string
+          format: date
+        scope:
+          type: string
+          enum:
+          - thisWeek
+          - allWeeks
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeacherAvailabilitySlot'
+          minItems: 42
+          maxItems: 42
+          uniqueItems: true
+      description: Exactly one cell for each weekday 1-6 and lesson number 1-7. The period is inferred from weekStartDate.
+        allWeeks replaces the period template and clears its existing week overrides.
+      x-requires-db-migration: true
+      x-unique-cell-key:
+      - dayOfWeek
+      - lessonNumber
+    TeacherAvailabilityUpdateResponse:
+      type: object
+      required:
+      - availability
+      - publishedConflicts
+      properties:
+        availability:
+          $ref: '#/components/schemas/TeacherAvailability'
+        publishedConflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lesson'
+      description: Conflicting published lessons are reported so the UI can notify the administrator.
+      x-requires-db-migration: true
+    GenerationWeights:
+      type: object
+      required:
+      - groupGaps
+      - teacherGaps
+      - groupMinimumDailyLoad
+      - groupMaximumDailyLoad
+      - teacherMinimumDailyLoad
+      - teacherMaximumDailyLoad
+      - groupLoadBalance
+      - teacherLoadBalance
+      - earlySlots
+      - lateSlots
+      - teacherPreferences
+      - oversizedClassroom
+      properties:
+        groupGaps:
+          type: integer
+          format: int32
+          minimum: 0
+        teacherGaps:
+          type: integer
+          format: int32
+          minimum: 0
+        groupMinimumDailyLoad:
+          type: integer
+          format: int32
+          minimum: 0
+        groupMaximumDailyLoad:
+          type: integer
+          format: int32
+          minimum: 0
+        teacherMinimumDailyLoad:
+          type: integer
+          format: int32
+          minimum: 0
+        teacherMaximumDailyLoad:
+          type: integer
+          format: int32
+          minimum: 0
+        groupLoadBalance:
+          type: integer
+          format: int32
+          minimum: 0
+        teacherLoadBalance:
+          type: integer
+          format: int32
+          minimum: 0
+        earlySlots:
+          type: integer
+          format: int32
+          minimum: 0
+        lateSlots:
+          type: integer
+          format: int32
+          minimum: 0
+        teacherPreferences:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Penalty weight for the selected teacher's preferred slots.
+        oversizedClassroom:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Penalty weight for assigning a classroom substantially larger than the group.
+      description: The twelve non-negative criteria shown in the generation settings panel.
+    GenerationParameters:
+      type: object
+      required:
+      - weights
+      - timeLimitSeconds
+      properties:
+        weights:
+          $ref: '#/components/schemas/GenerationWeights'
+        timeLimitSeconds:
+          type: integer
+          format: int32
+          minimum: 1
+      description: Persisted settings snapshot for the run that produced this version. Progress counters belong to GenerationJob.
+    GroupDailyLoad:
+      type: object
+      required:
+      - groupId
+      - dayOfWeek
+      - lessonCount
+      properties:
+        groupId:
+          $ref: '#/components/schemas/DatabaseId'
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 6
+        lessonCount:
+          type: integer
+          format: int32
+          minimum: 0
+    TeacherDailyLoad:
+      type: object
+      required:
+      - teacherId
+      - dayOfWeek
+      - lessonCount
+      properties:
+        teacherId:
+          $ref: '#/components/schemas/DatabaseId'
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 6
+        lessonCount:
+          type: integer
+          format: int32
+          minimum: 0
+    ScheduleQualityMetrics:
+      type: object
+      required:
+      - totalPenalty
+      - groupGaps
+      - teacherGaps
+      - earlyLessons
+      - lateLessons
+      - conflictCount
+      properties:
+        totalPenalty:
+          type: number
+          format: double
+          minimum: 0
+        groupGaps:
+          type: integer
+          format: int64
+          minimum: 0
+        teacherGaps:
+          type: integer
+          format: int64
+          minimum: 0
+        earlyLessons:
+          type: integer
+          format: int64
+          minimum: 0
+        lateLessons:
+          type: integer
+          format: int64
+          minimum: 0
+        conflictCount:
+          type: integer
+          format: int64
+          minimum: 0
+      description: Version-wide metrics computed from its lessons and saved generation weights; they are not lesson columns.
+    ScheduleWeekMetrics:
+      type: object
+      required:
+      - groupDailyLoads
+      - teacherDailyLoads
+      properties:
+        groupDailyLoads:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupDailyLoad'
+        teacherDailyLoads:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeacherDailyLoad'
+      description: Per-day lesson counts for the selected week, matching the currently displayed schedule grid.
+    ScheduleComparisonKey:
+      type: object
+      required:
+      - requirementId
+      - weekStartDate
+      - occurrenceIndex
+      properties:
+        requirementId:
+          $ref: '#/components/schemas/DatabaseId'
+        weekStartDate:
+          type: string
+          format: date
+        occurrenceIndex:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 42
+    ScheduleChange:
+      type: object
+      required:
+      - key
+      - changeType
+      - before
+      - after
+      properties:
+        key:
+          $ref: '#/components/schemas/ScheduleComparisonKey'
+        changeType:
+          $ref: '#/components/schemas/ScheduleChangeType'
+        before:
+          oneOf:
+          - $ref: '#/components/schemas/Lesson'
+          - type: 'null'
+        after:
+          oneOf:
+          - $ref: '#/components/schemas/Lesson'
+          - type: 'null'
+      description: added has only after, removed has only before, changed has both.
+    PublishRejected:
+      type: object
+      required:
+      - message
+      - validation
+      properties:
+        message:
+          type: string
+        validation:
+          $ref: '#/components/schemas/ScheduleValidation'
+    GenerationSettings:
+      type: object
+      required:
+      - weights
+      - timeLimitSeconds
+      - updatedAt
+      properties:
+        weights:
+          $ref: '#/components/schemas/GenerationWeights'
+        timeLimitSeconds:
+          type: integer
+          format: int32
+          minimum: 1
+        updatedAt:
+          type: string
+          format: date-time
+      description: Saved in backend settings storage; this is not part of the generator protocol.
+      x-requires-db-migration: true
+    GenerationSettingsWriteRequest:
+      type: object
+      required:
+      - weights
+      - timeLimitSeconds
+      properties:
+        weights:
+          $ref: '#/components/schemas/GenerationWeights'
+        timeLimitSeconds:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 86400
+    CreateGenerationJobRequest:
+      type: object
+      required:
+      - periodId
+      - weights
+      properties:
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+        weights:
+          $ref: '#/components/schemas/GenerationWeights'
+        timeLimitSeconds:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 86400
+        saveAsDefault:
+          type: boolean
+          default: false
+      description: If timeLimitSeconds is omitted, the saved default is used. When saveAsDefault is true, weights
+        and the effective time limit are saved for the next run.
+    GenerationMessage:
+      type: object
+      required:
+      - createdAt
+      - level
+      - message
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum:
+          - info
+          - warning
+          - error
+        message:
+          type: string
+    GenerationDiagnostic:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        groupId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        teacherId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        subjectId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+    GenerationJob:
+      type: object
+      required:
+      - id
+      - periodId
+      - parameters
+      - status
+      - createdAt
+      - elapsedSeconds
+      - iterationsProcessed
+      - messages
+      - diagnostics
+      - scheduleVersionId
+      properties:
+        id:
+          type: string
+          format: uuid
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+        status:
+          $ref: '#/components/schemas/GenerationJobStatus'
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        finishedAt:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        elapsedSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        progressPercent:
+          type:
+          - integer
+          - 'null'
+          format: int32
+          minimum: 0
+          maximum: 100
+        currentStage:
+          type:
+          - string
+          - 'null'
+        iterationsProcessed:
+          type: integer
+          format: int64
+          minimum: 0
+        bestPenalty:
+          type:
+          - number
+          - 'null'
+          format: double
+          minimum: 0
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenerationMessage'
+        diagnostics:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenerationDiagnostic'
+        scheduleVersionId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        parameters:
+          $ref: '#/components/schemas/GenerationJobParameters'
+      description: Job state is a backend/frontend resource. Poll this endpoint when a live update channel is unavailable;
+        persistence requires generation_jobs storage.
+      x-requires-db-migration: true
+    GenerationJobCollection:
+      allOf:
+      - $ref: '#/components/schemas/PageInfo'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/GenerationJob'
+    GenerationIssue:
+      type: object
+      required:
+      - code
+      - severity
+      - message
+      properties:
+        code:
+          type: string
+        severity:
+          $ref: '#/components/schemas/GenerationIssueSeverity'
+        message:
+          type: string
+        groupId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        teacherId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        subjectId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+        requirementId:
+          oneOf:
+          - $ref: '#/components/schemas/DatabaseId'
+          - type: 'null'
+    GenerationReadiness:
+      type: object
+      required:
+      - periodId
+      - canRun
+      - errors
+      - warnings
+      properties:
+        periodId:
+          $ref: '#/components/schemas/DatabaseId'
+        canRun:
+          type: boolean
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenerationIssue'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/GenerationIssue'
+      description: canRun is false exactly when errors is non-empty.
+    ImportUploadRequest:
+      type: object
+      required:
+      - entityType
+      - file
+      properties:
+        entityType:
+          $ref: '#/components/schemas/ImportEntityType'
+        file:
+          type: string
+          format: binary
+    ImportIssue:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        column:
+          type:
+          - string
+          - 'null'
+    ImportRowPreview:
+      type: object
+      required:
+      - rowNumber
+      - status
+      - values
+      - errors
+      properties:
+        rowNumber:
+          type: integer
+          format: int32
+          minimum: 1
+        status:
+          type: string
+          enum:
+          - valid
+          - invalid
+        values:
+          type: object
+          additionalProperties:
+            type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportIssue'
+    ImportPreview:
+      type: object
+      required:
+      - importId
+      - entityType
+      - fileName
+      - totalRows
+      - validRows
+      - invalidRows
+      - rows
+      - expiresAt
+      properties:
+        importId:
+          type: string
+          format: uuid
+        entityType:
+          $ref: '#/components/schemas/ImportEntityType'
+        fileName:
+          type: string
+        totalRows:
+          type: integer
+          format: int32
+          minimum: 0
+        validRows:
+          type: integer
+          format: int32
+          minimum: 0
+        invalidRows:
+          type: integer
+          format: int32
+          minimum: 0
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRowPreview'
+        expiresAt:
+          type: string
+          format: date-time
+      description: Temporary validation result; no row has been saved yet.
+    ImportResult:
+      type: object
+      required:
+      - importId
+      - entityType
+      - importedRows
+      - skippedRows
+      - createdIds
+      properties:
+        importId:
+          type: string
+          format: uuid
+        entityType:
+          $ref: '#/components/schemas/ImportEntityType'
+        importedRows:
+          type: integer
+          format: int32
+          minimum: 0
+        skippedRows:
+          type: integer
+          format: int32
+          minimum: 0
+        createdIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+      description: Only valid rows are saved; rows with preview errors are skipped.
+    DashboardNotification:
+      type: object
+      required:
+      - id
+      - createdAt
+      - level
+      - message
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum:
+          - info
+          - warning
+          - error
+        message:
+          type: string
+        lessonIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/DatabaseId'
+    GenerationJobParameters:
+      type: object
+      required:
+      - weights
+      - timeLimitSeconds
+      properties:
+        weights:
+          $ref: '#/components/schemas/GenerationWeights'
+        timeLimitSeconds:
+          type: integer
+          format: int32
+          minimum: 1
+    UpdateGroupRequest:
+      type: object
+      minProperties: 1
+      properties:
+        groupName:
+          type: string
+          minLength: 1
+        studentCount:
+          type: integer
+          format: int32
+          minimum: 1

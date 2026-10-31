@@ -1,3 +1,5 @@
+# Deprecated legacy stub. Use ../../common/openapi.yaml as the API contract.
+# backend/Makefile also generates Go HTTP types from the shared specification.
 openapi: 3.1.0
 
 info:
@@ -42,6 +44,6 @@ components:
 
     ErrorItem:
       type: object
-      required: [ error_message ]
+      required: [ message ]
       properties:
-        error_message: { type: string }
+        message: { type: string }

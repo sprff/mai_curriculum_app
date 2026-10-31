@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 
 	ht "github.com/ogen-go/ogen/http"
@@ -39,7 +40,7 @@ func errorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err
 	resp := generated.ErrorsResponse{
 		Errors: []generated.ErrorItem{
 			{
-				ErrorMessage: err.Error(),
+				Message: err.Error(),
 			},
 		},
 	}
@@ -49,7 +50,7 @@ func errorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err
 
 	err = encoder.Encode(resp)
 	if err != nil {
-		// pass
+		log.Printf("error encoding response: %v", err)
 	}
 }
 
