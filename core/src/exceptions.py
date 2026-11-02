@@ -1,9 +1,5 @@
 class CoreError(Exception):
-    """Базовая ошибка сервиса."""
-
-
-class InvalidRequestError(CoreError):
-    """Входные данные противоречивы, генерацию запускать бессмысленно."""
+    """Базовая ошибка генератора."""
 
 
 class NoSolutionError(CoreError):
@@ -14,5 +10,5 @@ class ScheduleTimeoutError(CoreError):
     """Не уложились в лимит времени."""
 
 
-class JobNotFoundError(CoreError):
-    """Задачи с таким id нет."""
+class BacktrackBudgetError(CoreError):
+    """Попытка исчерпала лимит откатов, пора начинать заново."""

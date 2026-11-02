@@ -1,6 +1,6 @@
 import pytest
 
-from src.api.schemas import Classroom, Group, GroupSubject, ScheduleRequest, Subject, TeacherSubject
+from src.schemas import Classroom, Group, GroupSubject, ScheduleRequest, Subject, TeacherSubject
 
 
 @pytest.fixture

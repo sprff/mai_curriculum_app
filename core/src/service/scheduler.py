@@ -1,10 +1,11 @@
 import heapq
+import random
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 
-from src.api.schemas import Lesson, ScheduleRequest
-from src.exceptions import InvalidRequestError, NoSolutionError, ScheduleTimeoutError
+from src.exceptions import BacktrackBudgetError, NoSolutionError, ScheduleTimeoutError
+from src.schemas import Lesson, ScheduleRequest
 
 _DAYS = 6
 _LESSON_NUMBERS = range(1, 8)
@@ -15,6 +16,9 @@ _W_TEACHER_WINDOW = 3
 _W_EARLY = 2
 _W_LATE = 3
 _W_OVERLOAD = 5
+
+_FIRST_BUDGET = 2000
+_BUDGET_GROWTH = 1.5
 
 
 @dataclass(frozen=True)
@@ -61,11 +65,48 @@ def _windows(numbers: set[int]) -> int:
     return max(numbers) - min(numbers) + 1 - len(numbers) if numbers else 0
 
 
-class _Scheduler:
-    """Жадный поиск с доменами, MRV, выбором слота по штрафу и откатами."""
+class Scheduler:
+    """Генератор недельного расписания.
 
-    def __init__(self, request: ScheduleRequest) -> None:
-        """Заводит домены и индексы."""
+    Поиск с возвратом: пары ставятся по одной, у каждой хранится домен свободных слотов,
+    следующей берётся пара с самым узким доменом (MRV), слот выбирается по минимальному штрафу.
+    Если попытка упирается в лимит откатов, поиск начинается заново со случайным разбиением ничьих.
+    """
+
+    def __init__(self, time_limit_s: float = 120) -> None:
+        """time_limit_s: лимит времени на одну генерацию."""
+        self._time_limit_s = time_limit_s
+
+    def build(self, request: ScheduleRequest) -> list[Lesson]:
+        """Строит расписание на неделю. Вход должен быть заранее провалидирован."""
+        deadline = time.monotonic() + self._time_limit_s
+        budget, seed = _FIRST_BUDGET, 0
+        while True:
+            self._reset(request, seed)
+            try:
+                self._search(deadline, budget)
+                break
+            except BacktrackBudgetError:
+                seed += 1
+                budget = int(budget * _BUDGET_GROWTH)
+        return [
+            Lesson(
+                day=pl.slot.day,
+                lesson_number=pl.slot.lesson_number,
+                group_id=pair.group_id,
+                subject_id=pair.subject_id,
+                teacher_id=pl.teacher_id,
+                classroom_id=pl.classroom_id,
+            )
+            for pair, pl in sorted(
+                self._schedule.items(), key=lambda x: (x[0].group_id, x[1].slot.day, x[1].slot.lesson_number)
+            )
+        ]
+
+    def _reset(self, request: ScheduleRequest, seed: int) -> None:
+        """Заводит домены и индексы. seed > 0 случайно разбивает ничьи при выборе пары и слота."""
+        self._rng = random.Random(seed)
+        self._noise = seed > 0
         self._rooms = sorted(request.classrooms, key=lambda c: c.capacity)
         self._group_size = {g.id: g.size for g in request.groups}
         self._teachers_for: dict[int, list[int]] = defaultdict(list)
@@ -86,19 +127,27 @@ class _Scheduler:
             self._pairs_of_group[p.group_id].append(p)
             self._pairs_of_subject[(p.group_id, p.subject_id)].append(p)
         self._pairs_of_teacher: dict[int, set[_Pair]] = defaultdict(set)
+        self._pairs_by_size = sorted(pairs, key=lambda p: self._group_size[p.group_id], reverse=True)
 
         self._chosen_teacher: dict[tuple[int, int], int] = {}
         self._teacher_load: Counter[int] = Counter()
         self._group_day: dict[tuple[int, int], set[int]] = defaultdict(set)
         self._teacher_day: dict[tuple[int, int], set[int]] = defaultdict(set)
         self._busy_rooms: set[tuple[int, _Slot]] = set()
-        self.schedule: dict[_Pair, _Placement] = {}
+        self._schedule: dict[_Pair, _Placement] = {}
 
-        order = sorted(pairs, key=lambda p: (len(self._teachers_for[p.subject_id]), p.group_id, p.subject_id))
+        jitter = {p: self._tie() for p in pairs}
+        order = sorted(
+            pairs, key=lambda p: (len(self._teachers_for[p.subject_id]), jitter[p], p.group_id, p.subject_id)
+        )
         self._rank = {p: i for i, p in enumerate(order)}
         self._queue: list[tuple[int, int, _Pair]] = []
         for p in pairs:
             self._push(p)
+
+    def _tie(self) -> float:
+        """Случайная добавка для разбиения ничьих, 0 в первой попытке."""
+        return self._rng.random() if self._noise else 0.0
 
     def _push(self, pair: _Pair) -> None:
         """Кладёт пару в очередь с текущим размером домена."""
@@ -119,6 +168,13 @@ class _Scheduler:
             if room.capacity >= size and (room.id_number, slot) not in self._busy_rooms:
                 return room.id_number
         return None
+
+    def _biggest_free_room(self, slot: _Slot) -> int:
+        """Вместимость самой большой свободной аудитории в слоте, 0 если свободных нет."""
+        for room in reversed(self._rooms):
+            if (room.id_number, slot) not in self._busy_rooms:
+                return room.capacity
+        return 0
 
     def _free_teacher(self, pair: _Pair, slot: _Slot) -> int | None:
         """Уже выбранный препод группы, если свободен, иначе наименее загруженный свободный."""
@@ -147,8 +203,11 @@ class _Scheduler:
             room = self._free_room(pair, slot) if teacher is not None else None
             if room is not None:
                 result.append(_Placement(slot, teacher, room))
-        result.sort(key=lambda pl: (self._penalty(pair, pl), pl.slot.day, pl.slot.lesson_number))
-        return result
+        keyed = [
+            (self._penalty(pair, pl), self._tie(), pl.slot.day, pl.slot.lesson_number, pl) for pl in result
+        ]
+        keyed.sort(key=lambda x: x[:4])
+        return [x[4] for x in keyed]
 
     def _place(self, pair: _Pair, pl: _Placement) -> tuple[tuple, bool]:
         """Ставит пару и вычёркивает слот у соседей. Возвращает, что откатывать, и тупик ли это."""
@@ -158,7 +217,7 @@ class _Scheduler:
         if new_teacher:
             self._chosen_teacher[key] = t
         self._remaining.discard(pair)
-        self.schedule[pair] = pl
+        self._schedule[pair] = pl
         self._teacher_load[t] += 1
         self._group_day[(pair.group_id, slot.day)].add(slot.lesson_number)
         self._teacher_day[(t, slot.day)].add(slot.lesson_number)
@@ -189,6 +248,12 @@ class _Scheduler:
         for p in self._pairs_of_teacher[t]:
             if p in self._remaining:
                 _drop(p, slot)
+        biggest_free = self._biggest_free_room(slot)
+        for p in self._pairs_by_size:
+            if self._group_size[p.group_id] <= biggest_free:
+                break
+            if p in self._remaining:
+                _drop(p, slot)
 
         for p in touched:
             self._push(p)
@@ -205,7 +270,7 @@ class _Scheduler:
             del self._chosen_teacher[key]
             self._pairs_of_teacher[t].difference_update(self._pairs_of_subject[key])
         self._remaining.add(pair)
-        del self.schedule[pair]
+        del self._schedule[pair]
         self._teacher_load[t] -= 1
         self._group_day[(pair.group_id, slot.day)].discard(slot.lesson_number)
         self._teacher_day[(t, slot.day)].discard(slot.lesson_number)
@@ -213,20 +278,23 @@ class _Scheduler:
         for p in {p for p, _ in removed}:
             self._push(p)
 
-    def solve(self, time_limit_s: float) -> None:
-        """Поиск в глубину на явном стеке, без рекурсии."""
-        deadline = time.monotonic() + time_limit_s
+    def _search(self, deadline: float, max_backtracks: int) -> None:
+        """Поиск в глубину на явном стеке, без рекурсии, с лимитом откатов на попытку."""
+        backtracks = 0
         first = self._next_pair()
         if first is None:
             return
         stack = [_Frame(first, self._options(first))]
         while stack:
             if time.monotonic() > deadline:
-                raise ScheduleTimeoutError(f"не уложились в {time_limit_s:g} с")
+                raise ScheduleTimeoutError(f"не уложились в {self._time_limit_s:g} с")
             frame = stack[-1]
             if frame.applied is not None:
                 self._unplace(frame.pair, frame.options[frame.next_option - 1], frame.applied)
                 frame.applied = None
+                backtracks += 1
+                if backtracks > max_backtracks:
+                    raise BacktrackBudgetError
             if frame.next_option == len(frame.options):
                 stack.pop()
                 self._push(frame.pair)
@@ -241,56 +309,3 @@ class _Scheduler:
                 return
             stack.append(_Frame(pair, self._options(pair)))
         raise NoSolutionError("расписания с такими данными не существует")
-
-
-def validate_request(request: ScheduleRequest) -> None:
-    """Проверяет ссылки и очевидные противоречия до запуска генерации."""
-    subjects = {s.id: s for s in request.subjects}
-    groups = {g.id: g for g in request.groups}
-    errors = []
-    for ts in request.teacher_subjects:
-        if ts.subject_id not in subjects:
-            errors.append(f"teacher_subjects: нет дисциплины {ts.subject_id}")
-    teachable = {ts.subject_id for ts in request.teacher_subjects}
-    max_capacity = max((c.capacity for c in request.classrooms), default=0)
-    load: Counter[int] = Counter()
-    seen = set()
-    for gs in request.group_subjects:
-        key = (gs.group_id, gs.subject_id)
-        if gs.group_id not in groups:
-            errors.append(f"group_subjects: нет группы {gs.group_id}")
-        elif gs.subject_id not in subjects:
-            errors.append(f"group_subjects: нет дисциплины {gs.subject_id}")
-        elif gs.subject_id not in teachable:
-            errors.append(f"дисциплину {gs.subject_id} никто не может вести")
-        elif key in seen:
-            errors.append(f"группа {gs.group_id} изучает дисциплину {gs.subject_id} дважды")
-        else:
-            load[gs.group_id] += subjects[gs.subject_id].weekly_number_of_lessons
-        seen.add(key)
-    for group in request.groups:
-        if group.size > max_capacity:
-            errors.append(f"для группы {group.id} нет аудитории на {group.size} человек")
-        if load[group.id] > len(_SLOTS):
-            errors.append(f"у группы {group.id} {load[group.id]} пар в неделю при {len(_SLOTS)} слотах")
-    if errors:
-        raise InvalidRequestError("; ".join(errors))
-
-
-def build_schedule(request: ScheduleRequest, time_limit_s: float) -> list[Lesson]:
-    """Строит расписание на неделю."""
-    scheduler = _Scheduler(request)
-    scheduler.solve(time_limit_s)
-    return [
-        Lesson(
-            day=pl.slot.day,
-            lesson_number=pl.slot.lesson_number,
-            group_id=pair.group_id,
-            subject_id=pair.subject_id,
-            teacher_id=pl.teacher_id,
-            classroom_id=pl.classroom_id,
-        )
-        for pair, pl in sorted(
-            scheduler.schedule.items(), key=lambda x: (x[0].group_id, x[1].slot.day, x[1].slot.lesson_number)
-        )
-    ]

@@ -1,5 +1,3 @@
-from enum import Enum
-
 from pydantic import BaseModel, Field
 
 
@@ -57,27 +55,3 @@ class Lesson(BaseModel):
     subject_id: int
     teacher_id: int
     classroom_id: int
-
-
-class JobStatus(str, Enum):
-    """Статус задачи генерации."""
-
-    QUEUED = "queued"
-    RUNNING = "running"
-    DONE = "done"
-    FAILED = "failed"
-
-
-class JobCreated(BaseModel):
-    """Ответ на создание задачи."""
-
-    id: str
-
-
-class JobResponse(BaseModel):
-    """Состояние задачи, а когда она готова, ещё и расписание."""
-
-    id: str
-    status: JobStatus
-    error: str | None = None
-    lessons: list[Lesson] | None = None

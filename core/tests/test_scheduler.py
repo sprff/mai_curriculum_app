@@ -2,9 +2,9 @@ from collections import Counter
 
 import pytest
 
-from src.api.schemas import GroupSubject, Lesson, ScheduleRequest
-from src.exceptions import InvalidRequestError, ScheduleTimeoutError
-from src.service.scheduler import build_schedule, validate_request
+from src.exceptions import ScheduleTimeoutError
+from src.schemas import Lesson, ScheduleRequest
+from src.service.scheduler import Scheduler
 
 
 def _clashes(lessons: list[Lesson]) -> int:
@@ -18,7 +18,7 @@ def _clashes(lessons: list[Lesson]) -> int:
 
 def test_schedule_satisfies_hard_constraints(small_request: ScheduleRequest) -> None:
     """Все пары поставлены и ни одно жёсткое ограничение не нарушено."""
-    lessons = build_schedule(small_request, time_limit_s=10)
+    lessons = Scheduler(time_limit_s=10).build(small_request)
     weekly = {s.id: s.weekly_number_of_lessons for s in small_request.subjects}
     size = {g.id: g.size for g in small_request.groups}
     capacity = {c.id_number: c.capacity for c in small_request.classrooms}
@@ -37,28 +37,13 @@ def test_schedule_satisfies_hard_constraints(small_request: ScheduleRequest) -> 
         assert teachers.setdefault((x.group_id, x.subject_id), x.teacher_id) == x.teacher_id
 
 
-def test_unknown_subject_rejected(small_request: ScheduleRequest) -> None:
-    """Ссылка на несуществующую дисциплину."""
-    small_request.group_subjects.append(GroupSubject(group_id=1, subject_id=99))
-    with pytest.raises(InvalidRequestError, match="нет дисциплины 99"):
-        validate_request(small_request)
-
-
-def test_subject_without_teacher_rejected(small_request: ScheduleRequest) -> None:
-    """Дисциплину никто не может вести."""
-    small_request.teacher_subjects = [ts for ts in small_request.teacher_subjects if ts.subject_id != 2]
-    with pytest.raises(InvalidRequestError, match="дисциплину 2 никто не может вести"):
-        validate_request(small_request)
-
-
-def test_group_too_big_rejected(small_request: ScheduleRequest) -> None:
-    """Группа не влезает ни в одну аудиторию."""
-    small_request.groups[0].size = 100
-    with pytest.raises(InvalidRequestError, match="нет аудитории на 100"):
-        validate_request(small_request)
+def test_same_input_same_schedule(small_request: ScheduleRequest) -> None:
+    """Генерация детерминирована: одинаковый вход даёт одинаковое расписание."""
+    scheduler = Scheduler(time_limit_s=10)
+    assert scheduler.build(small_request) == scheduler.build(small_request)
 
 
 def test_timeout(small_request: ScheduleRequest) -> None:
     """Лимит времени соблюдается."""
     with pytest.raises(ScheduleTimeoutError):
-        build_schedule(small_request, time_limit_s=0)
+        Scheduler(time_limit_s=0).build(small_request)
