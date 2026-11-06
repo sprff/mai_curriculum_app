@@ -1,10 +1,7 @@
 package handlers
 
-import (
-	api "backend/internal/http_adapter/router/generated"
-	"context"
-)
+import "context"
 
-func (h *Handler) Ping(ctx context.Context) (api.PingRes, error) {
-	return new(api.PingOKApplicationJSON("pong")), nil
+func (h *Handler) Ping(_ context.Context) (string, error) {
+	return "pong", nil
 }

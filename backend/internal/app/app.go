@@ -17,8 +17,10 @@ func Run() {
 
 	httpAdapter, err := http_adapter.New()
 	if err != nil {
-		logrus.Fatal("error initializing http adapter")
+		logrus.Fatalf("error initializing http adapter: %v", err)
 	}
+
+	defer httpAdapter.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -31,7 +33,7 @@ func Run() {
 	logrus.Print("App started.")
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGTSTP)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	defer signal.Stop(quit)
 
 	select {

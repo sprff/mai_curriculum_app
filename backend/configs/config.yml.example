@@ -1,2 +1,5 @@
 port: "8080"
-shutdownTimeout: 15
+shutdownTimeout: 15s
+# PostgreSQL and JWT settings are read from environment variables:
+# DATABASE_URL, AUTH_JWT_SECRET (at least 32 random bytes; never commit secrets).
+# No database migration is executed by the application.

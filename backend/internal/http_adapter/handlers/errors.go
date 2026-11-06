@@ -1,39 +1,22 @@
 package handlers
 
 import (
+	"backend/internal/auth"
+	api "backend/internal/http_adapter/router/generated"
 	"context"
 	"errors"
-	"net/http"
-
-	api "backend/internal/http_adapter/router/generated"
 )
 
-type codedError struct {
-	code int
-	err  error
-}
-
-func (e *codedError) Error() string { return e.err.Error() }
-
-func (e *codedError) Unwrap() error { return e.err }
-
-func apiErr(code int, err error) error {
-	return &codedError{code: code, err: err}
-}
-
-func (h *Handler) NewError(_ context.Context, err error) *api.ErrorsResponseStatusCode {
-	code := http.StatusInternalServerError
-
-	if ce, ok := errors.AsType[*codedError](err); ok {
-		code = ce.code
+func (h *Handler) HandleBearerAuth(ctx context.Context, _ api.OperationName, token api.BearerAuth) (context.Context, error) {
+	if h.service == nil {
+		return ctx, auth.ErrUnauthorized
 	}
-
-	return &api.ErrorsResponseStatusCode{
-		StatusCode: code,
-		Response: api.ErrorsResponse{
-			Errors: []api.ErrorItem{
-				{ErrorMessage: err.Error()},
-			},
-		},
+	user, err := h.service.Authorize(ctx, token.Token)
+	if err != nil {
+		if errors.Is(err, auth.ErrUnauthorized) {
+			return ctx, err
+		}
+		return ctx, errors.Join(auth.ErrUnavailable, err)
 	}
+	return auth.WithUser(ctx, user), nil
 }
