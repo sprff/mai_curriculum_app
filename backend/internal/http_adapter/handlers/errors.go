@@ -17,7 +17,7 @@ func (e *codedError) Error() string { return e.err.Error() }
 
 func (e *codedError) Unwrap() error { return e.err }
 
-func apiErr(code int, err error) error {
+func apiErr(code int, err error) error { //nolint:unused // должно быть по правилам ogen
 	return &codedError{code: code, err: err}
 }
 
@@ -32,7 +32,7 @@ func (h *Handler) NewError(_ context.Context, err error) *api.ErrorsResponseStat
 		StatusCode: code,
 		Response: api.ErrorsResponse{
 			Errors: []api.ErrorItem{
-				{ErrorMessage: err.Error()},
+				{Message: err.Error()},
 			},
 		},
 	}
