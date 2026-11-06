@@ -225,7 +225,7 @@ async function requestLogin(login, password) {
         throw new AuthError(
             'account_disabled',
             'Учетная запись отключена',
-            'Обратитесь к администратору системы'
+            'Обратитесь к администратору системы.'
         )
     }
 
@@ -264,7 +264,7 @@ async function demoLogin(login, password) {
         throw new AuthError(
             'account_disabled',
             'Учетная запись отключена',
-            'Обратитесь к администратору системы'
+            'Обратитесь к администратору системы.'
         )
     }
 
