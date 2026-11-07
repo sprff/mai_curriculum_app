@@ -12,7 +12,7 @@ class Subject(BaseModel):
     """Дисциплина и сколько пар в неделю у каждой группы, которая её изучает."""
 
     id: int
-    weekly_number_of_lessons: int = Field(ge=1, le=6)
+    weekly_number_of_lessons: int = Field(ge=1)
 
 
 class Group(BaseModel):
