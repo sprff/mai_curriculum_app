@@ -1,5 +1,5 @@
 from src.schemas import Classroom, Group, GroupSubject, ScheduleRequest, Subject, TeacherSubject
-from src.service.validator import validate
+from src.service.validator import ValidationIssue, validate
 
 
 def make_request(groups: int, teachers: int, rooms: int) -> ScheduleRequest:
@@ -22,38 +22,51 @@ def test_correct_data(small_request: ScheduleRequest) -> None:
 def test_unknown_subject(small_request: ScheduleRequest) -> None:
     """Преподаватель ведёт дисциплину 999, которой нет."""
     small_request.teacher_subjects.append(TeacherSubject(teacher_id=7, subject_id=999))
-    assert validate(small_request) == ["преподаватель 7 ведёт дисциплину 999, которой нет в списке"]
+    assert validate(small_request) == [
+        ValidationIssue("unknown_subject", "преподаватель 7 ведёт дисциплину 999, которой нет в списке")
+    ]
 
 
 def test_unknown_group(small_request: ScheduleRequest) -> None:
     """Группа 999 изучает дисциплину, но такой группы нет."""
     small_request.group_subjects.append(GroupSubject(group_id=999, subject_id=1))
-    assert validate(small_request) == ["группы 999 нет в списке групп"]
+    assert validate(small_request) == [ValidationIssue("unknown_group", "группы 999 нет в списке групп")]
 
 
 def test_group_studies_unknown_subject(small_request: ScheduleRequest) -> None:
     """Группа 1 изучает дисциплину 999, которой нет."""
     small_request.group_subjects.append(GroupSubject(group_id=1, subject_id=999))
-    assert validate(small_request) == ["группа 1 изучает дисциплину 999, которой нет в списке"]
+    assert validate(small_request) == [
+        ValidationIssue("unknown_subject", "группа 1 изучает дисциплину 999, которой нет в списке")
+    ]
 
 
 def test_duplicate_group_subject(small_request: ScheduleRequest) -> None:
     """Группа 1 изучает дисциплину 1 дважды."""
     small_request.group_subjects.append(GroupSubject(group_id=1, subject_id=1))
-    assert validate(small_request) == ["группа 1 изучает дисциплину 1 дважды"]
+    assert validate(small_request) == [
+        ValidationIssue("duplicate_group_subject", "группа 1 изучает дисциплину 1 дважды")
+    ]
 
 
 def test_subject_without_teacher(small_request: ScheduleRequest) -> None:
     """Дисциплину 2 некому вести."""
     small_request.teacher_subjects = [ts for ts in small_request.teacher_subjects if ts.subject_id != 2]
-    assert validate(small_request) == ["дисциплину 2 некому вести: у неё нет ни одного преподавателя"]
+    assert validate(small_request) == [
+        ValidationIssue(
+            "subject_without_teacher", "дисциплину 2 некому вести: у неё нет ни одного преподавателя"
+        )
+    ]
 
 
 def test_group_too_big(small_request: ScheduleRequest) -> None:
     """Группа на 100 человек, а самая большая аудитория на 30 мест."""
     small_request.groups.append(Group(id=4, size=100))
     assert validate(small_request) == [
-        "группа 4 (100 чел.) не помещается ни в одну аудиторию, самая большая аудитория на 30 мест"
+        ValidationIssue(
+            "group_too_big",
+            "группа 4 (100 чел.) не помещается ни в одну аудиторию, самая большая аудитория на 30 мест",
+        )
     ]
 
 
@@ -66,20 +79,27 @@ def test_group_too_many_lessons() -> None:
         teacher_subjects=[TeacherSubject(teacher_id=s, subject_id=s) for s in range(1, 9)],
         group_subjects=[GroupSubject(group_id=1, subject_id=s) for s in range(1, 9)],
     )
-    assert validate(request) == ["у группы 1 48 пар в неделю, а в сетке всего 42 слота"]
+    assert validate(request) == [
+        ValidationIssue("group_too_many_lessons", "у группы 1 48 пар в неделю, а в сетке всего 42 слота")
+    ]
 
 
 def test_subject_more_than_once_a_day(small_request: ScheduleRequest) -> None:
     """У дисциплины 7 пар в неделю, а учебных дней 6."""
     small_request.subjects[0] = Subject(id=1, weekly_number_of_lessons=7)
-    assert validate(small_request) == ["у дисциплины 1 7 пар в неделю, а максимум - 6"]
+    assert validate(small_request) == [
+        ValidationIssue("subject_too_many_lessons", "у дисциплины 1 7 пар в неделю, а максимум - 6")
+    ]
 
 
 def test_not_enough_teachers() -> None:
     """8 групп по 6 пар = 48 пар, а 1 преподаватель проведёт максимум 42."""
     request = make_request(groups=8, teachers=1, rooms=2)
     assert validate(request) == [
-        "дисциплине 1 нужно 48 пар в неделю, а её преподаватели (1 чел.) могут провести максимум 42"
+        ValidationIssue(
+            "not_enough_teachers",
+            "дисциплине 1 нужно 48 пар в неделю, а её преподаватели (1 чел.) могут провести максимум 42",
+        )
     ]
 
 
@@ -87,8 +107,11 @@ def test_not_enough_rooms() -> None:
     """8 групп по 6 пар = 48 пар, а 1 аудитория вмещает максимум 42."""
     request = make_request(groups=8, teachers=2, rooms=1)
     assert validate(request) == [
-        "не хватает аудиторий на 25 и больше мест: у групп от 25 человек 48 пар в неделю, "
-        "а в подходящих аудиториях (1 шт.) возможно провести максимум 42"
+        ValidationIssue(
+            "not_enough_rooms",
+            "не хватает аудиторий на 25 и больше мест: у групп от 25 человек 48 пар в неделю, "
+            "а в подходящих аудиториях (1 шт.) возможно провести максимум 42",
+        )
     ]
 
 
