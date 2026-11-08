@@ -12,3 +12,11 @@ class ScheduleTimeoutError(CoreError):
 
 class BacktrackBudgetError(CoreError):
     """Попытка исчерпала лимит откатов, пора начинать заново."""
+
+
+class ScheduleCancelledError(CoreError):
+    """Пользователь отменил построение расписания"""
+
+
+class JobNotFoundError(CoreError):
+    """Задачи с таким идентификатором нет"""

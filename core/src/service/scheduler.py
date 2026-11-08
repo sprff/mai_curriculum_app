@@ -3,8 +3,10 @@ import random
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from threading import Event
+from typing import Callable
 
-from src.exceptions import BacktrackBudgetError, NoSolutionError, ScheduleTimeoutError
+from src.exceptions import BacktrackBudgetError, NoSolutionError, ScheduleCancelledError, ScheduleTimeoutError
 from src.schemas import Lesson, ScheduleRequest
 
 _DAYS = 6
@@ -77,18 +79,35 @@ class Scheduler:
         """time_limit_s: лимит времени на одну генерацию."""
         self._time_limit_s = time_limit_s
 
-    def build(self, request: ScheduleRequest) -> list[Lesson]:
-        """Строит расписание на неделю. Вход должен быть заранее провалидирован."""
+    def build(
+        self,
+        request: ScheduleRequest,
+        progress_callback: Callable[[int, int], None] | None = None,
+        cancel_event: Event | None = None,
+    ) -> list[Lesson]:
+        """Строит расписание на неделю и при необходимости сообщает прогресс"""
         deadline = time.monotonic() + self._time_limit_s
+
+        # Сохраняем колбэк и сигнал отмены для проверки во время поиска
+        self._progress_callback = progress_callback
+        self._cancel_event = cancel_event
+        self._last_progress_at = float("-inf")
+        self._deadline = deadline
+
         budget, seed = _FIRST_BUDGET, 0
         while True:
+            self._check_stop()
             self._reset(request, seed)
+            self._report_progress()
             try:
                 self._search(deadline, budget)
                 break
             except BacktrackBudgetError:
                 seed += 1
                 budget = int(budget * _BUDGET_GROWTH)
+
+        # Отменённую задачу нельзя считать успешно завершённой
+        self._check_stop()
         return [
             Lesson(
                 day=pl.slot.day,
@@ -136,6 +155,9 @@ class Scheduler:
         self._busy_rooms: set[tuple[int, _Slot]] = set()
         self._schedule: dict[_Pair, _Placement] = {}
 
+        # Общее число пар остаётся тем же даже при откатах поиска
+        self._total_pairs = len(pairs)
+
         jitter = {p: self._tie() for p in pairs}
         order = sorted(
             pairs, key=lambda p: (len(self._teachers_for[p.subject_id]), jitter[p], p.group_id, p.subject_id)
@@ -144,6 +166,27 @@ class Scheduler:
         self._queue: list[tuple[int, int, _Pair]] = []
         for p in pairs:
             self._push(p)
+
+    def _check_stop(self) -> None:
+        """Проверяет отмену и время выполнения"""
+        if self._cancel_event is not None and self._cancel_event.is_set():
+            raise ScheduleCancelledError("генерация отменена")
+
+        if time.monotonic() > self._deadline:
+            raise ScheduleTimeoutError(f"не уложились в {self._time_limit_s:g} с")
+
+    def _report_progress(self) -> None:
+        """Передаёт количество поставленных пар не чаще раза в 0,5 секунды"""
+        if self._progress_callback is None:
+            return
+
+        now = time.monotonic()
+        if now - self._last_progress_at < 0.5:
+            return
+
+        # При откате количество поставленных пар может уменьшаться
+        self._last_progress_at = now
+        self._progress_callback(len(self._schedule), self._total_pairs)
 
     def _tie(self) -> float:
         """Случайная добавка для разбиения ничьих, 0 в первой попытке."""
@@ -199,6 +242,7 @@ class Scheduler:
         """Слоты из домена со свободным преподом и аудиторией, лучшие первыми."""
         result = []
         for slot in self._domain[pair]:
+            self._check_stop()
             teacher = self._free_teacher(pair, slot)
             room = self._free_room(pair, slot) if teacher is not None else None
             if room is not None:
@@ -218,6 +262,7 @@ class Scheduler:
             self._chosen_teacher[key] = t
         self._remaining.discard(pair)
         self._schedule[pair] = pl
+        self._report_progress()
         self._teacher_load[t] += 1
         self._group_day[(pair.group_id, slot.day)].add(slot.lesson_number)
         self._teacher_day[(t, slot.day)].add(slot.lesson_number)
@@ -271,6 +316,7 @@ class Scheduler:
             self._pairs_of_teacher[t].difference_update(self._pairs_of_subject[key])
         self._remaining.add(pair)
         del self._schedule[pair]
+        self._report_progress()
         self._teacher_load[t] -= 1
         self._group_day[(pair.group_id, slot.day)].discard(slot.lesson_number)
         self._teacher_day[(t, slot.day)].discard(slot.lesson_number)
@@ -286,8 +332,8 @@ class Scheduler:
             return
         stack = [_Frame(first, self._options(first))]
         while stack:
-            if time.monotonic() > deadline:
-                raise ScheduleTimeoutError(f"не уложились в {self._time_limit_s:g} с")
+            # Каждый шаг поиска проверяет, не попросили ли остановить задачу
+            self._check_stop()
             frame = stack[-1]
             if frame.applied is not None:
                 self._unplace(frame.pair, frame.options[frame.next_option - 1], frame.applied)
