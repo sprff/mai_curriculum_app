@@ -1,35 +1,41 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class Classroom(BaseModel):
+class _Frozen(BaseModel):
+    """Модель без изменения полей: значения задаются только при создании."""
+
+    model_config = ConfigDict(frozen=True)
+
+
+class Classroom(_Frozen):
     """Аудитория."""
 
     id_number: int
     capacity: int = Field(gt=0)
 
 
-class Subject(BaseModel):
+class Subject(_Frozen):
     """Дисциплина и сколько пар в неделю у каждой группы, которая её изучает."""
 
     id: int
-    weekly_number_of_lessons: int = Field(ge=1, le=6)
+    weekly_number_of_lessons: int = Field(ge=1)
 
 
-class Group(BaseModel):
+class Group(_Frozen):
     """Группа и её численность."""
 
     id: int
     size: int = Field(gt=0)
 
 
-class TeacherSubject(BaseModel):
+class TeacherSubject(_Frozen):
     """Препод может вести дисциплину."""
 
     teacher_id: int
     subject_id: int
 
 
-class GroupSubject(BaseModel):
+class GroupSubject(_Frozen):
     """Группа изучает дисциплину."""
 
     group_id: int
@@ -46,7 +52,7 @@ class ScheduleRequest(BaseModel):
     group_subjects: list[GroupSubject]
 
 
-class Lesson(BaseModel):
+class Lesson(_Frozen):
     """Одна поставленная пара. day: 0 = понедельник."""
 
     day: int

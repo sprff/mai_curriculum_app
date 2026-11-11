@@ -3,10 +3,8 @@ import random
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from threading import Event
-from typing import Callable
 
-from src.exceptions import BacktrackBudgetError, NoSolutionError, ScheduleCancelledError, ScheduleTimeoutError
+from src.exceptions import BacktrackBudgetError, NoSolutionError, ScheduleTimeoutError
 from src.schemas import Lesson, ScheduleRequest
 
 _DAYS = 6
@@ -67,6 +65,102 @@ def _windows(numbers: set[int]) -> int:
     return max(numbers) - min(numbers) + 1 - len(numbers) if numbers else 0
 
 
+class _NoNoise:
+    """Замена random.Random для первой попытки: ничьи не разбиваются, поиск детерминирован."""
+
+    def random(self) -> float:
+        """Всегда 0: случайной добавки нет."""
+        return 0.0
+
+
+@dataclass(frozen=True)
+class _DayContext:
+    """Что уже стоит в день, куда ставится пара: номера пар группы и препода."""
+
+    lesson_number: int
+    group_lessons: set[int]
+    teacher_lessons: set[int]
+
+
+class _PenaltyRule:
+    """Мягкое ограничение: сколько штрафа добавит постановка пары."""
+
+    def cost(self, ctx: _DayContext) -> int:
+        """Штраф за постановку пары в контексте дня."""
+        raise NotImplementedError
+
+
+@dataclass(frozen=True)
+class _GroupWindows(_PenaltyRule):
+    """Окна у группы."""
+
+    weight: int
+
+    def cost(self, ctx: _DayContext) -> int:
+        g = ctx.group_lessons
+        return self.weight * (_windows(g | {ctx.lesson_number}) - _windows(g))
+
+
+@dataclass(frozen=True)
+class _TeacherWindows(_PenaltyRule):
+    """Окна у препода."""
+
+    weight: int
+
+    def cost(self, ctx: _DayContext) -> int:
+        t = ctx.teacher_lessons
+        return self.weight * (_windows(t | {ctx.lesson_number}) - _windows(t))
+
+
+@dataclass(frozen=True)
+class _EarlyLesson(_PenaltyRule):
+    """Первая пара."""
+
+    weight: int
+
+    def cost(self, ctx: _DayContext) -> int:
+        return self.weight * (ctx.lesson_number == 1)
+
+
+@dataclass(frozen=True)
+class _LateLesson(_PenaltyRule):
+    """Пара с номером from_number и позже."""
+
+    weight: int
+    from_number: int
+
+    def cost(self, ctx: _DayContext) -> int:
+        return self.weight * (ctx.lesson_number >= self.from_number)
+
+
+@dataclass(frozen=True)
+class _DayOverload(_PenaltyRule):
+    """У группы в этот день уже limit пар и больше."""
+
+    weight: int
+    limit: int
+
+    def cost(self, ctx: _DayContext) -> int:
+        return self.weight * (len(ctx.group_lessons) >= self.limit)
+
+
+class _DayLoad(_PenaltyRule):
+    """Каждая уже стоящая пара группы в этот день: пары размазываются по неделе."""
+
+    def cost(self, ctx: _DayContext) -> int:
+        return len(ctx.group_lessons)
+
+
+_PENALTY_RULES: tuple[_PenaltyRule, ...] = (
+    _GroupWindows(_W_GROUP_WINDOW),
+    _TeacherWindows(_W_TEACHER_WINDOW),
+    _EarlyLesson(_W_EARLY),
+    _LateLesson(_W_LATE, from_number=6),
+    _DayOverload(_W_OVERLOAD, limit=_MAX_PER_DAY),
+    _DayLoad(),
+)
+
+
 class Scheduler:
     """Генератор недельного расписания.
 
@@ -79,35 +173,18 @@ class Scheduler:
         """time_limit_s: лимит времени на одну генерацию."""
         self._time_limit_s = time_limit_s
 
-    def build(
-        self,
-        request: ScheduleRequest,
-        progress_callback: Callable[[int, int], None] | None = None,
-        cancel_event: Event | None = None,
-    ) -> list[Lesson]:
-        """Строит расписание на неделю и при необходимости сообщает прогресс"""
+    def build(self, request: ScheduleRequest) -> list[Lesson]:
+        """Строит расписание на неделю. Вход должен быть заранее провалидирован."""
         deadline = time.monotonic() + self._time_limit_s
-
-        # Сохраняем колбэк и сигнал отмены для проверки во время поиска
-        self._progress_callback = progress_callback
-        self._cancel_event = cancel_event
-        self._last_progress_at = float("-inf")
-        self._deadline = deadline
-
         budget, seed = _FIRST_BUDGET, 0
         while True:
-            self._check_stop()
             self._reset(request, seed)
-            self._report_progress()
             try:
                 self._search(deadline, budget)
                 break
             except BacktrackBudgetError:
                 seed += 1
                 budget = int(budget * _BUDGET_GROWTH)
-
-        # Отменённую задачу нельзя считать успешно завершённой
-        self._check_stop()
         return [
             Lesson(
                 day=pl.slot.day,
@@ -124,8 +201,7 @@ class Scheduler:
 
     def _reset(self, request: ScheduleRequest, seed: int) -> None:
         """Заводит домены и индексы. seed > 0 случайно разбивает ничьи при выборе пары и слота."""
-        self._rng = random.Random(seed)
-        self._noise = seed > 0
+        self._rng: random.Random | _NoNoise = random.Random(seed) if seed > 0 else _NoNoise()
         self._rooms = sorted(request.classrooms, key=lambda c: c.capacity)
         self._group_size = {g.id: g.size for g in request.groups}
         self._teachers_for: dict[int, list[int]] = defaultdict(list)
@@ -155,10 +231,7 @@ class Scheduler:
         self._busy_rooms: set[tuple[int, _Slot]] = set()
         self._schedule: dict[_Pair, _Placement] = {}
 
-        # Общее число пар остаётся тем же даже при откатах поиска
-        self._total_pairs = len(pairs)
-
-        jitter = {p: self._tie() for p in pairs}
+        jitter = {p: self._rng.random() for p in pairs}
         order = sorted(
             pairs, key=lambda p: (len(self._teachers_for[p.subject_id]), jitter[p], p.group_id, p.subject_id)
         )
@@ -166,31 +239,6 @@ class Scheduler:
         self._queue: list[tuple[int, int, _Pair]] = []
         for p in pairs:
             self._push(p)
-
-    def _check_stop(self) -> None:
-        """Проверяет отмену и время выполнения"""
-        if self._cancel_event is not None and self._cancel_event.is_set():
-            raise ScheduleCancelledError("генерация отменена")
-
-        if time.monotonic() > self._deadline:
-            raise ScheduleTimeoutError(f"не уложились в {self._time_limit_s:g} с")
-
-    def _report_progress(self) -> None:
-        """Передаёт количество поставленных пар не чаще раза в 0,5 секунды"""
-        if self._progress_callback is None:
-            return
-
-        now = time.monotonic()
-        if now - self._last_progress_at < 0.5:
-            return
-
-        # При откате количество поставленных пар может уменьшаться
-        self._last_progress_at = now
-        self._progress_callback(len(self._schedule), self._total_pairs)
-
-    def _tie(self) -> float:
-        """Случайная добавка для разбиения ничьих, 0 в первой попытке."""
-        return self._rng.random() if self._noise else 0.0
 
     def _push(self, pair: _Pair) -> None:
         """Кладёт пару в очередь с текущим размером домена."""
@@ -229,26 +277,24 @@ class Scheduler:
     def _penalty(self, pair: _Pair, placement: _Placement) -> int:
         """Насколько вырастет штраф, если поставить пару сюда."""
         slot = placement.slot
-        n = slot.lesson_number
-        g = self._group_day[(pair.group_id, slot.day)]
-        t = self._teacher_day[(placement.teacher_id, slot.day)]
-        cost = _W_GROUP_WINDOW * (_windows(g | {n}) - _windows(g))
-        cost += _W_TEACHER_WINDOW * (_windows(t | {n}) - _windows(t))
-        cost += _W_EARLY * (n == 1) + _W_LATE * (n >= 6)
-        cost += _W_OVERLOAD * (len(g) >= _MAX_PER_DAY) + len(g)
-        return cost
+        ctx = _DayContext(
+            lesson_number=slot.lesson_number,
+            group_lessons=self._group_day[(pair.group_id, slot.day)],
+            teacher_lessons=self._teacher_day[(placement.teacher_id, slot.day)],
+        )
+        return sum(rule.cost(ctx) for rule in _PENALTY_RULES)
 
     def _options(self, pair: _Pair) -> list[_Placement]:
         """Слоты из домена со свободным преподом и аудиторией, лучшие первыми."""
         result = []
         for slot in self._domain[pair]:
-            self._check_stop()
             teacher = self._free_teacher(pair, slot)
             room = self._free_room(pair, slot) if teacher is not None else None
             if room is not None:
                 result.append(_Placement(slot, teacher, room))
         keyed = [
-            (self._penalty(pair, pl), self._tie(), pl.slot.day, pl.slot.lesson_number, pl) for pl in result
+            (self._penalty(pair, pl), self._rng.random(), pl.slot.day, pl.slot.lesson_number, pl)
+            for pl in result
         ]
         keyed.sort(key=lambda x: x[:4])
         return [x[4] for x in keyed]
@@ -262,7 +308,6 @@ class Scheduler:
             self._chosen_teacher[key] = t
         self._remaining.discard(pair)
         self._schedule[pair] = pl
-        self._report_progress()
         self._teacher_load[t] += 1
         self._group_day[(pair.group_id, slot.day)].add(slot.lesson_number)
         self._teacher_day[(t, slot.day)].add(slot.lesson_number)
@@ -316,7 +361,6 @@ class Scheduler:
             self._pairs_of_teacher[t].difference_update(self._pairs_of_subject[key])
         self._remaining.add(pair)
         del self._schedule[pair]
-        self._report_progress()
         self._teacher_load[t] -= 1
         self._group_day[(pair.group_id, slot.day)].discard(slot.lesson_number)
         self._teacher_day[(t, slot.day)].discard(slot.lesson_number)
@@ -332,8 +376,8 @@ class Scheduler:
             return
         stack = [_Frame(first, self._options(first))]
         while stack:
-            # Каждый шаг поиска проверяет, не попросили ли остановить задачу
-            self._check_stop()
+            if time.monotonic() > deadline:
+                raise ScheduleTimeoutError(f"не уложились в {self._time_limit_s:g} с")
             frame = stack[-1]
             if frame.applied is not None:
                 self._unplace(frame.pair, frame.options[frame.next_option - 1], frame.applied)
