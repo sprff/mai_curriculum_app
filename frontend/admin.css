@@ -1,0 +1,736 @@
+/* Этот файл оформляет кабинет администратора */
+/* Общие цвета, шрифты и шапка уже заданы в styles.css */
+
+/* Основная часть администратора может прокручиваться вместе со страницей */
+.admin-page .page {
+    min-height: 100vh;
+    overflow: visible;
+}
+
+/* Оставляем вокруг белой рабочей карточки немного воздуха */
+.admin-page .page-main {
+    display: block;
+    min-height: 0;
+    padding: 24px clamp(16px, 2vw, 30px) 40px;
+}
+
+/* Кабинет состоит из узкого меню и широкой рабочей области */
+.admin-shell {
+    position: relative;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 186px minmax(0, 1fr);
+    min-height: max(680px, calc(100dvh - 110px));
+    overflow: hidden;
+    border: 1px solid #e2e9f3;
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 14px 36px rgba(23, 32, 51, 0.08);
+}
+
+/* Боковое меню с небольшим светлым фоном */
+.admin-sidebar {
+    padding: 22px 12px;
+    border-right: 1px solid #e9edf5;
+    background: linear-gradient(180deg, #fafcff, #f7faff);
+}
+
+/* Ссылки меню идут друг под другом */
+.admin-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* У кнопок меню убираем стандартное браузерное оформление */
+.admin-nav-link {
+    width: 100%;
+    padding: 11px 13px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: #344054;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* При наведении подсвечиваем вкладку светло-голубым */
+.admin-nav-link:hover {
+    background: #ebf2ff;
+    color: var(--primary-dark);
+}
+
+/* Синяя кнопка показывает выбранный раздел */
+.admin-nav-link.is-current {
+    background: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 7px 15px rgba(37, 99, 235, 0.18);
+}
+
+/* Справа находятся заголовок и содержимое выбранного раздела */
+.admin-content {
+    min-width: 0;
+    padding: clamp(22px, 2.1vw, 34px);
+}
+
+/* Скрытые разделы не должны занимать место на странице */
+.admin-section[hidden],
+.record-form[hidden] {
+    display: none !important;
+}
+
+/* Названия разделов заметные, но без лишнего подзаголовка */
+.admin-title {
+    margin: 0 0 26px;
+    font-size: clamp(26px, 2.4vw, 34px);
+    font-weight: 760;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+}
+
+/* Пять карточек показателей в первом ряду панели управления */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+/* Одна карточка с количеством групп или других записей */
+.stat-card {
+    min-width: 0;
+    padding: 20px 17px;
+    border: 1px solid #e0e9f6;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #ffffff, #f8fbff);
+}
+
+.stat-card__count {
+    display: block;
+    color: var(--text-main);
+    font-size: clamp(25px, 2.4vw, 34px);
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.stat-card__name {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+/* Два больших информационных блока под показателями */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.overview-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 204px;
+    padding: 22px;
+    border: 1px solid #e0e7f2;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(23, 32, 51, 0.025);
+}
+
+.overview-card__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.overview-card h2 {
+    margin: 0 0 13px;
+    font-size: 17px;
+    line-height: 1.3;
+}
+
+.overview-card__heading h2 {
+    margin: 0;
+}
+
+.overview-card p {
+    margin: 2px 0 5px;
+    color: #55647a;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.overview-card p strong {
+    color: #172033;
+}
+
+/* Кнопку внутри карточки прижимаем к низу */
+.overview-card > .admin-button {
+    margin-top: auto;
+}
+
+/* Короткие метки для разных состояний расписания */
+.status-pill {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.status-pill--green {
+    background: #e8f8ed;
+    color: #218047;
+}
+
+.status-pill--blue {
+    background: #eaf2ff;
+    color: var(--primary-dark);
+}
+
+/* Уведомления занимают всю ширину под двумя карточками */
+.overview-card--notification {
+    min-height: 160px;
+    margin-top: 18px;
+}
+
+/* Строка с сообщением и кнопкой перехода */
+.notification-line {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #f0dfbd;
+    border-radius: 13px;
+    background: #fffaf0;
+}
+
+.notification-line__symbol {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 27px;
+    height: 27px;
+    border: 2px solid #b57b24;
+    border-radius: 50%;
+    color: #a66d1b;
+    font-weight: 800;
+}
+
+.notification-line__text {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.notification-line__text span {
+    color: #735d37;
+}
+
+/* Панель поиска и кнопки создания записи */
+.admin-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.admin-toolbar__filters {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* Поля и списки во всех разделах одинаковые */
+.admin-input,
+.admin-select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 13px;
+    border: 1px solid #d5dfed;
+    border-radius: 10px;
+    outline: none;
+    background: #ffffff;
+    color: var(--text-main);
+    font-size: 13px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-input:focus,
+.admin-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.admin-input::placeholder {
+    color: #96a2b5;
+}
+
+.admin-search {
+    flex: 0 1 350px;
+    width: min(350px, 100%);
+}
+
+.admin-toolbar__filters .admin-select {
+    flex: 0 0 180px;
+    width: 180px;
+}
+
+/* Общий вид кнопок во всём кабинете */
+.admin-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 42px;
+    padding: 9px 15px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.25;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-button--primary {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.admin-button--primary:hover {
+    background: var(--primary-dark);
+}
+
+.admin-button--outline {
+    border-color: #d4deed;
+    background: #ffffff;
+    color: var(--text-main);
+}
+
+.admin-button--outline:hover {
+    border-color: #9eb9e9;
+    background: #f6f9ff;
+}
+
+/* При большом числе строк таблица помещается в отдельную область */
+.admin-table-wrap {
+    overflow: auto;
+    border: 1px solid #e0e6ef;
+    border-radius: 14px;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+}
+
+/* Заголовки остаются видны при прокрутке таблицы */
+.admin-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 15px 14px;
+    border-bottom: 1px solid #dde6f1;
+    background: #f2f6fc;
+    color: #344054;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: 14px;
+    border-bottom: 1px solid #edf1f7;
+    color: #3a485e;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: #fafcff;
+}
+
+.admin-table .cell-main {
+    color: #172033;
+    font-weight: 650;
+}
+
+.admin-table .cell-muted {
+    color: #98a2b3;
+}
+
+.admin-table .cell-action {
+    text-align: right;
+}
+
+/* Небольшая ссылка редактирования справа в строке */
+.admin-edit {
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: #f0f5ff;
+    color: var(--primary-dark);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.admin-edit:hover {
+    background: #e1ecff;
+}
+
+.admin-table .empty-row {
+    padding: 35px 20px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Названия сортировок тоже выглядят как обычные заголовки */
+.sort-button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    cursor: pointer;
+}
+
+/* Помощь со скрытыми подписями для полей */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+/* Для непрорисованных разделов показываем честный информационный экран */
+.upcoming-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: 570px;
+    padding: 34px;
+    border: 1px solid #dfe8f5;
+    border-radius: 18px;
+    background: #f8fbff;
+}
+
+.upcoming-card__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #eaf2ff;
+    color: var(--primary);
+    font-size: 28px;
+}
+
+.upcoming-card h2 {
+    margin: 0;
+    font-size: 19px;
+}
+
+.upcoming-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Браузер сам затемняет фон за открытым dialog */
+.admin-dialog {
+    width: min(95vw, 470px);
+    max-height: min(90vh, 850px);
+    padding: 26px 28px;
+    overflow-y: auto;
+    border: 1px solid #dfe7f1;
+    border-radius: 22px;
+    background: #ffffff;
+    color: var(--text-main);
+    box-shadow: 0 26px 80px rgba(20, 32, 58, 0.20);
+}
+
+.admin-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.56);
+    backdrop-filter: blur(3px);
+}
+
+.admin-dialog__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.admin-dialog__header h2 {
+    margin: 0;
+    font-size: 23px;
+    letter-spacing: -0.02em;
+}
+
+/* Крестик закрывает всплывающее окно */
+.modal-close {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0 0 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 9px;
+    background: #f2f6fb;
+    color: #667085;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* Поля в модальном окне идут вертикально */
+.record-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.admin-field[hidden] {
+    display: none;
+}
+
+.admin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.admin-role-fieldset {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.admin-role-fieldset legend {
+    width: 100%;
+    margin-bottom: 9px;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.admin-role-fieldset label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #48556d;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.admin-role-fieldset input,
+.admin-checkbox input {
+    accent-color: var(--primary);
+}
+
+.admin-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+}
+
+/* Ошибка формы появляется под полями при неправильных данных */
+.form-error {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: #fff2f1;
+    color: #c32724;
+    font-size: 12px;
+}
+
+.form-error[hidden] {
+    display: none;
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.dialog-actions .admin-button {
+    min-width: 122px;
+}
+
+.dialog-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* Временное сообщение об успешном действии */
+.admin-toast {
+    position: fixed;
+    right: 25px;
+    bottom: 22px;
+    z-index: 10;
+    max-width: 380px;
+    padding: 12px 16px;
+    border: 1px solid #bde5ca;
+    border-radius: 11px;
+    background: #f0fff5;
+    color: #176936;
+    box-shadow: 0 12px 28px rgba(20, 32, 58, 0.12);
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.admin-toast[hidden] {
+    display: none;
+}
+
+/* На ноутбуке пять показателей размещаются в три столбца */
+@media (max-width: 1199px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .admin-content {
+        padding: 22px;
+    }
+}
+
+/* На планшете оставляем две карточки в ряд и сужаем меню */
+@media (max-width: 850px) {
+    .admin-shell {
+        grid-template-columns: 158px minmax(0, 1fr);
+    }
+
+    .admin-sidebar {
+        padding: 17px 9px;
+    }
+
+    .admin-nav-link {
+        padding: 10px 9px;
+        font-size: 12px;
+    }
+
+    .overview-grid,
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-table {
+        min-width: 720px;
+    }
+}
+
+/* На телефоне меню становится горизонтальным над рабочей областью */
+@media (max-width: 620px) {
+    .admin-page .page-main {
+        padding: 14px 10px 24px;
+    }
+
+    .admin-shell {
+        grid-template-columns: minmax(0, 1fr);
+        border-radius: 18px;
+    }
+
+    .admin-sidebar {
+        overflow-x: auto;
+        padding: 12px;
+        border-right: 0;
+        border-bottom: 1px solid #e9edf5;
+    }
+
+    .admin-navigation {
+        flex-direction: row;
+        width: max-content;
+        gap: 4px;
+    }
+
+    .admin-nav-link {
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .admin-content {
+        padding: 18px 12px 26px;
+    }
+
+    .stats-grid {
+        gap: 9px;
+    }
+
+    .stat-card {
+        padding: 14px;
+    }
+
+    .overview-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .notification-line {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .notification-line .admin-button {
+        width: 100%;
+    }
+
+    .admin-toolbar__filters,
+    .admin-toolbar__filters .admin-select,
+    .admin-toolbar .admin-search,
+    .admin-toolbar > .admin-button {
+        width: 100%;
+    }
+
+    .admin-dialog {
+        padding: 22px 17px;
+    }
+
+    .admin-role-fieldset {
+        gap: 10px;
+    }
+}
