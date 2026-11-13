@@ -10,3 +10,12 @@
 
 ## Подключение хуков
 `git config core.hooksPath .githooks`
+
+## Запуск HTTP-сервера
+
+```
+cd backend
+source .env
+make generate
+make start
+```

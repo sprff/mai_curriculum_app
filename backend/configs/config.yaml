@@ -1,0 +1,11 @@
+port: "8080"
+shutdownTimeout: 15s
+
+postgresql:
+  host: localhost
+  port: 5432
+  database: curriculum
+  user: postgres
+  password: ""
+  sslMode: disable
+  connectTimeout: 5s

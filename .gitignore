@@ -1,5 +1,6 @@
 .idea
 
-*.yml
 *.env
+.env.*
+!.env.example
 generated

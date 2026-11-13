@@ -1,6 +1,7 @@
 package app
 
 import (
+	"backend/internal/config"
 	"backend/internal/http_adapter"
 	"context"
 	"errors"
@@ -12,10 +13,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Run() {
+func Run(cfg config.Config) {
 	logrus.Print("Initializing components...")
 
-	httpAdapter, err := http_adapter.New()
+	httpAdapter, err := http_adapter.New(cfg)
 	if err != nil {
 		logrus.Fatal("error initializing http adapter")
 	}

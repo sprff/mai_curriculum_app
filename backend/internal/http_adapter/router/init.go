@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/ogenerrors"
@@ -19,6 +20,8 @@ func New() (http.Handler, error) {
 
 	openapiRouter, err := generated.NewServer(
 		h,
+		h,
+		generated.WithPathPrefix("/api/v1"),
 		generated.WithErrorHandler(errorHandler),
 	)
 	if err != nil {
@@ -37,12 +40,9 @@ func errorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err
 	code := errorCode(err)
 	w.WriteHeader(code)
 
-	resp := generated.ErrorsResponse{
-		Errors: []generated.ErrorItem{
-			{
-				Message: err.Error(),
-			},
-		},
+	resp := generated.Error{
+		Code:    strconv.Itoa(code),
+		Message: err.Error(),
 	}
 
 	encoder := json.NewEncoder(w)
