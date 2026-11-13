@@ -1,2 +1,7 @@
 port: "8080"
-shutdownTimeout: 15
+shutdownTimeout: 15s
+database:
+  dsn: "postgres://postgres:postgres@localhost:5432/mai_curriculum?sslmode=disable"
+core:
+  baseURL: "http://localhost:8000"
+  timeout: 10s

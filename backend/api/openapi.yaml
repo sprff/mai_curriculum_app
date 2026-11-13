@@ -1,5 +1,4 @@
-# Deprecated legacy stub. Use ../../common/openapi.yaml as the API contract.
-# backend/Makefile also generates Go HTTP types from the shared specification.
+# Implemented backend API. Shared project contracts are in common/.
 openapi: 3.1.0
 
 info:
@@ -25,12 +24,100 @@ paths:
           description: Internal server error
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorsResponse' }
+              schema: {$ref: '#/components/schemas/ErrorsResponse'}
         default:
-          description: Unspecified error
+          $ref: '#/components/responses/UnexpectedError'
+
+  /jobs:
+    post:
+      operationId: CreateGenerationJob
+      summary: Start schedule generation from a database snapshot.
+      security: []
+      responses:
+        '202':
+          description: Job accepted by core.
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/ErrorsResponse' }
+              schema:
+                $ref: '#/components/schemas/JobCreated'
+        '422':
+          description: Invalid generation data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationIssues'
+        '500':
+          $ref: '#/components/responses/GeneratorInternalError'
+        '502':
+          $ref: '#/components/responses/CoreUnavailable'
+        '504':
+          $ref: '#/components/responses/CoreTimeout'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /jobs/{job_id}:
+    parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    get:
+      operationId: GetGenerationJob
+      summary: Get the current job state from core.
+      security: []
+      responses:
+        '200':
+          description: Current job state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobState'
+        '400':
+          $ref: '#/components/responses/GeneratorBadRequest'
+        '404':
+          description: Core job not found.
+        '422':
+          $ref: '#/components/responses/CorePathValidationError'
+        '502':
+          $ref: '#/components/responses/CoreUnavailable'
+        '504':
+          $ref: '#/components/responses/CoreTimeout'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /jobs/{job_id}/cancel:
+    parameters:
+      - name: job_id
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+    post:
+      operationId: CancelGenerationJob
+      summary: Request job cancellation in core.
+      security: []
+      responses:
+        '200':
+          description: Job state after cancellation request.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobState'
+        '400':
+          $ref: '#/components/responses/GeneratorBadRequest'
+        '404':
+          description: Core job not found.
+        '422':
+          $ref: '#/components/responses/CorePathValidationError'
+        '502':
+          $ref: '#/components/responses/CoreUnavailable'
+        '504':
+          $ref: '#/components/responses/CoreTimeout'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
 
 components:
   schemas:
@@ -40,10 +127,212 @@ components:
       properties:
         errors:
           type: array
-          items: { $ref: '#/components/schemas/ErrorItem' }
-
+          items: {$ref: '#/components/schemas/ErrorItem'}
     ErrorItem:
       type: object
-      required: [ message ]
+      required: [message]
       properties:
-        message: { type: string }
+        message: {type: string}
+    JobCreated:
+      description: 'Ответ на запуск генерации: номер созданной задачи.'
+      properties:
+        job_id:
+          title: Job Id
+          type: string
+      required:
+        - job_id
+      title: JobCreated
+      type: object
+    JobState:
+      description: Состояние задачи, которое можно безопасно вернуть вызывающему коду
+      properties:
+        cancel_requested:
+          title: Cancel Requested
+          type: boolean
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        error:
+          anyOf:
+            - type: string
+            - type: "null"
+          title: Error
+        finished_at:
+          anyOf:
+            - format: date-time
+              type: string
+            - type: "null"
+          title: Finished At
+        id:
+          title: Id
+          type: string
+        progress_placed:
+          title: Progress Placed
+          type: integer
+        progress_total:
+          title: Progress Total
+          type: integer
+        result:
+          anyOf:
+            - items:
+                $ref: '#/components/schemas/Lesson'
+              type: array
+            - type: "null"
+          title: Result
+        started_at:
+          anyOf:
+            - format: date-time
+              type: string
+            - type: "null"
+          title: Started At
+        status:
+          title: Status
+          type: string
+      required:
+        - id
+        - status
+        - created_at
+        - started_at
+        - finished_at
+        - progress_placed
+        - progress_total
+        - error
+        - result
+        - cancel_requested
+      title: JobState
+      type: object
+    Lesson:
+      description: 'Одна поставленная пара. day: 0 = понедельник.'
+      properties:
+        classroom_id:
+          title: Classroom Id
+          type: integer
+        day:
+          title: Day
+          type: integer
+        group_id:
+          title: Group Id
+          type: integer
+        lesson_number:
+          title: Lesson Number
+          type: integer
+        subject_id:
+          title: Subject Id
+          type: integer
+        teacher_id:
+          title: Teacher Id
+          type: integer
+      required:
+        - day
+        - lesson_number
+        - group_id
+        - subject_id
+        - teacher_id
+        - classroom_id
+      title: Lesson
+      type: object
+    ValidationIssues:
+      description: Ответ, если валидатор нашёл проблемы в данных.
+      properties:
+        issues:
+          items:
+            $ref: '#/components/schemas/ValidationIssue'
+          title: Issues
+          type: array
+      required:
+        - issues
+      title: ValidationIssues
+      type: object
+    ValidationIssue:
+      description: 'Проблема в данных: код и текст ошибки.'
+      properties:
+        code:
+          title: Code
+          type: string
+        message:
+          title: Message
+          type: string
+      required:
+        - code
+        - message
+      title: ValidationIssue
+      type: object
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
+      type: object
+    ValidationError:
+      properties:
+        ctx:
+          title: Context
+          type: object
+          additionalProperties:
+            x-ogen-type: encoding/json.RawMessage
+        input:
+          title: Input
+          description: The original value rejected by core validation; may be any JSON value.
+          x-ogen-type: encoding/json.RawMessage
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
+      type: object
+
+  responses:
+    UnexpectedError:
+      description:
+       Unexpected handler error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    GeneratorBadRequest:
+      description: Invalid job ID.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    GeneratorInternalError:
+      description: Failed to load generation data.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    CoreUnavailable:
+      description: Core unavailable or returned an unexpected response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    CoreTimeout:
+      description: Core request timed out.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorsResponse'
+    CorePathValidationError:
+      description: Core rejected the job ID.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/HTTPValidationError'

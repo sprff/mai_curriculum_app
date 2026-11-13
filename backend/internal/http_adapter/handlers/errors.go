@@ -21,14 +21,14 @@ func apiErr(code int, err error) error { //nolint:unused // должно быт�
 	return &codedError{code: code, err: err}
 }
 
-func (h *Handler) NewError(_ context.Context, err error) *api.ErrorsResponseStatusCode {
+func (h *Handler) NewError(_ context.Context, err error) *api.UnexpectedErrorStatusCode {
 	code := http.StatusInternalServerError
 
 	if ce, ok := errors.AsType[*codedError](err); ok {
 		code = ce.code
 	}
 
-	return &api.ErrorsResponseStatusCode{
+	return &api.UnexpectedErrorStatusCode{
 		StatusCode: code,
 		Response: api.ErrorsResponse{
 			Errors: []api.ErrorItem{

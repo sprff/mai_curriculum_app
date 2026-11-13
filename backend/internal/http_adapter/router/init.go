@@ -3,6 +3,7 @@ package router
 import (
 	"backend/internal/http_adapter/handlers"
 	"backend/internal/http_adapter/router/generated"
+	"backend/internal/service"
 	"context"
 	"encoding/json"
 	"errors"
@@ -14,8 +15,11 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func New() (http.Handler, error) {
-	h := handlers.New()
+func New(services *service.Service, coreCfg handlers.CoreConfig) (http.Handler, error) {
+	h, err := handlers.New(services, coreCfg)
+	if err != nil {
+		return nil, err
+	}
 
 	openapiRouter, err := generated.NewServer(
 		h,
@@ -26,6 +30,7 @@ func New() (http.Handler, error) {
 	}
 
 	router := http.NewServeMux()
+	router.Handle("/api/v1/", http.StripPrefix("/api/v1", openapiRouter))
 	router.Handle("/", openapiRouter)
 
 	return router, nil
