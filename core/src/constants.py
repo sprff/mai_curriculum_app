@@ -1,0 +1,5 @@
+"""Общие константы ядра."""
+
+DAYS_PER_WEEK = 6
+LESSONS_PER_DAY = 7
+SLOTS_PER_WEEK = DAYS_PER_WEEK * LESSONS_PER_DAY
