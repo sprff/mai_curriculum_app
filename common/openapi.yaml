@@ -6,10 +6,42 @@ info:
 
 servers:
   - url: http://localhost:8080/api/v1
-    description: Local server
 
 security:
   - BearerAuth: []
+
+# Reusable error responses. YAML merge applies the full set; aliases select individual errors.
+x-common-errors: &common-errors
+  '400': &bad-request
+    description: ""
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+  '401': &unauthorized
+    description: ""
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+  '403': &forbidden
+    description: ""
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+  '404': &not-found
+    description: ""
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
+  '409': &conflict
+    description: ""
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/Error'
 
 paths:
   /ping:
@@ -18,7 +50,7 @@ paths:
       security: []
       responses:
         '200':
-          description: Pong response
+          description: ""
           content:
             application/json:
               schema:
@@ -35,21 +67,12 @@ paths:
               $ref: '#/components/schemas/CreateUserRequest'
       responses:
         '200':
-          description: User created successfully
+          description: ""
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserPublicInfo'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
+        <<: *common-errors
 
   /users/{id}:
     delete:
@@ -62,19 +85,15 @@ paths:
             type: string
       responses:
         '200':
-          description: User deleted.
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+          description: ""
+        '401': *unauthorized
+        '403': *forbidden
+        '404': *not-found
 
   /auth/login:
     post:
       operationId: AuthLogin
       security: []
-      description: Authenticate with login and password.
       requestBody:
         required: true
         content:
@@ -83,15 +102,13 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Tokens issued.
+          description: ""
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthTokensInfo'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '400': *bad-request
+        '404': *not-found
 
   /auth/refresh:
     post:
@@ -105,18 +122,16 @@ paths:
               $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '200':
-          description: Tokens refreshed.
+          description: ""
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthTokensInfo'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        '400': *bad-request
 
   /auth/logout:
     post:
       operationId: AuthLogout
-      description: Revoke the refresh token
       security: []
       requestBody:
         required: true
@@ -126,22 +141,365 @@ paths:
               $ref: '#/components/schemas/RefreshTokenRequest'
       responses:
         '204':
-          description: Logged out
-        '400':
-          $ref: '#/components/responses/BadRequest'
+          description: ""
+        '400': *bad-request
 
   /auth/me:
     get:
       operationId: AuthMe
       responses:
         '200':
-          description: User authenticated.
+          description: ""
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserPublicInfo'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        '401': *unauthorized
+
+  /classrooms:
+    get:
+      operationId: ListClassrooms
+      tags: [Classrooms]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Classroom'
+        '400': *bad-request
+        '401': *unauthorized
+    post:
+      operationId: CreateClassroom
+      tags: [Classrooms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassroomInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '400': *bad-request
+        '401': *unauthorized
+        '403': *forbidden
+        '409': *conflict
+
+  /classrooms/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    get:
+      operationId: GetClassroom
+      tags: [Classrooms]
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '400': *bad-request
+        '401': *unauthorized
+        '404': *not-found
+    put:
+      operationId: UpdateClassroom
+      tags: [Classrooms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassroomInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        <<: *common-errors
+    delete:
+      operationId: DeleteClassroom
+      tags: [Classrooms]
+      responses:
+        '204':
+          description: ""
+        <<: *common-errors
+
+  /subjects:
+    get:
+      operationId: ListSubjects
+      tags: [Subjects]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+        '400': *bad-request
+        '401': *unauthorized
+    post:
+      operationId: CreateSubject
+      tags: [Subjects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '400': *bad-request
+        '401': *unauthorized
+        '403': *forbidden
+        '409': *conflict
+
+  /subjects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    get:
+      operationId: GetSubject
+      tags: [Subjects]
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '400': *bad-request
+        '401': *unauthorized
+        '404': *not-found
+    put:
+      operationId: UpdateSubject
+      tags: [Subjects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        <<: *common-errors
+    delete:
+      operationId: DeleteSubject
+      tags: [Subjects]
+      responses:
+        '204':
+          description: ""
+        <<: *common-errors
+
+  /groups:
+    get:
+      operationId: ListGroups
+      tags: [Groups]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+        '400': *bad-request
+        '401': *unauthorized
+    post:
+      operationId: CreateGroup
+      tags: [Groups]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400': *bad-request
+        '401': *unauthorized
+        '403': *forbidden
+        '409': *conflict
+
+  /groups/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    get:
+      operationId: GetGroup
+      tags: [Groups]
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400': *bad-request
+        '401': *unauthorized
+        '404': *not-found
+    put:
+      operationId: UpdateGroup
+      tags: [Groups]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        <<: *common-errors
+    delete:
+      operationId: DeleteGroup
+      tags: [Groups]
+      responses:
+        '204':
+          description: ""
+        <<: *common-errors
+
+  /relation/teacher/{teacher_id}/subject/{subject_id}:
+    parameters:
+      - name: teacher_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    post:
+      operationId: CreateTeacherSubjectRelation
+      tags: [Relations]
+      responses:
+        '200':
+          description: ""
+        <<: *common-errors
+    delete:
+      operationId: DeleteTeacherSubjectRelation
+      tags: [Relations]
+      responses:
+        '204':
+          description: ""
+        '400': *bad-request
+        '401': *unauthorized
+        '403': *forbidden
+        '404': *not-found
+
+  /relation/group/{group_id}/subject/{subject_id}:
+    parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    post:
+      operationId: CreateGroupSubjectRelation
+      tags: [Relations]
+      responses:
+        '200':
+          description: ""
+        <<: *common-errors
+    delete:
+      operationId: DeleteGroupSubjectRelation
+      tags: [Relations]
+      responses:
+        '204':
+          description: ""
+        '400': *bad-request
+        '401': *unauthorized
+        '403': *forbidden
+        '404': *not-found
 
 components:
   securitySchemes:
@@ -150,39 +508,106 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
-  responses:
-    BadRequest: # 400
-      description: Invalid request.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Unauthorized: # 401
-      description: Missing, invalid or expired credentials.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Forbidden: # 403
-      description: The authenticated user does not have the required role.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    NotFound: # 404
-      description: Resource not found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-    Conflict: # 409
-      description: Conflict.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-
   schemas:
+    EntityId:
+      type: integer
+      format: int64
+      minimum: 1
+      example: 1
+
+    Classroom:
+      type: object
+      required:
+        - id
+        - capacity
+        - room_number
+      properties:
+        id:
+          $ref: '#/components/schemas/EntityId'
+          readOnly: true
+        capacity:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 24
+        room_number:
+          type: string
+          minLength: 1
+          example: '202'
+
+    ClassroomInput:
+      type: object
+      required:
+        - capacity
+        - room_number
+      properties:
+        capacity:
+          type: integer
+          format: int32
+          minimum: 1
+        room_number:
+          type: string
+          minLength: 1
+          example: '202'
+
+    Subject:
+      type: object
+      required:
+        - id
+        - name
+        - weekly_number_of_lessons
+      properties:
+        id:
+          $ref: '#/components/schemas/EntityId'
+          readOnly: true
+        name:
+          type: string
+          minLength: 1
+          example: 'Математический анализ'
+        weekly_number_of_lessons:
+          type: integer
+          format: int32
+          minimum: 1
+
+    SubjectInput:
+      type: object
+      required:
+        - name
+        - weekly_number_of_lessons
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: 'Математический анализ'
+        weekly_number_of_lessons:
+          type: integer
+          format: int32
+          minimum: 1
+
+    Group:
+      type: object
+      required:
+        - id
+        - group_name
+      properties:
+        id:
+          $ref: '#/components/schemas/EntityId'
+          readOnly: true
+        group_name:
+          type: string
+          minLength: 1
+          example: 'ИВТ-101'
+
+    GroupInput:
+      type: object
+      required:
+        - group_name
+      properties:
+        group_name:
+          type: string
+          minLength: 1
+          example: 'ИВТ-101'
+
     UserRoleEnum:
       type: string
       enum:
@@ -191,7 +616,6 @@ components:
         - TEACHER
     UserPublicInfo:
       type: object
-      description: Public profile of an account created by an administrator. Contains no credentials.
       required:
         - id
         - login
@@ -200,16 +624,13 @@ components:
       properties:
         id:
           type: string
-          description: Unique user identifier.
           readOnly: true
         login:
           type: string
           minLength: 1
-          description: Unique login used to sign in.
         fullName:
           type: string
           minLength: 1
-          description: User's display name.
         role:
           $ref: '#/components/schemas/UserRoleEnum'
     AuthTokensInfo:
@@ -222,16 +643,13 @@ components:
         expires_in:
           type: integer
           minimum: 1
-          description: Access token lifetime in seconds.
           example: 600
         access_token:
           type: string
           minLength: 1
-          description: JWT token for the Authorization Bearer header.
         refresh_token:
           type: string
           minLength: 1
-          description: Refresh token for refreshing the access token.
     Error:
       type: object
       required:
@@ -240,15 +658,12 @@ components:
       properties:
         code:
           type: string
-          description: Machine-readable error code.
         message:
           type: string
-          description: Human-readable error description.
 
     # Request/Response schemas
     CreateUserRequest:
       type: object
-      description: Account details supplied by an administrator.
       required:
         - login
         - password
@@ -290,6 +705,3 @@ components:
           type: string
           minLength: 1
           writeOnly: true
-          description: Refresh token received at login or the latest successful refresh.
-
-
