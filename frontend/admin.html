@@ -1,46 +1,46 @@
 <!DOCTYPE html>
-<!-- Указываем русский язык для страницы -->
+
 <html lang="ru">
 <head>
-    <!-- UTF-8 нужен для правильного отображения русского текста -->
+    
     <meta charset="UTF-8">
-    <!-- Сайт подстраивается под ширину экрана -->
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Администратор — Расписание университета</title>
-    <!-- Общие стили те же, что на страницах студента и преподавателя -->
+    
     <link rel="stylesheet" href="styles.css">
-    <!-- Отдельный файл содержит оформление только кабинета администратора -->
+    
     <link rel="stylesheet" href="admin.css">
 </head>
 <body class="admin-page">
-    <!-- Сверху шапка, посередине кабинет, внизу контакт администратора -->
+    
     <div class="page">
         <header class="page-header">
-            <!-- Нажатие на название сайта открывает панель управления -->
+            
             <a class="brand" href="admin.html" aria-label="Панель управления расписанием">
                 <span class="brand__icon" aria-hidden="true">
-                    <!-- Календарь нарисован прямо в HTML, отдельная картинка не нужна -->
+                    
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M7 3V6M17 3V6M4.5 9H19.5M6 5H18C19.1 5 20 5.9 20 7V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V7C4 5.9 4.9 5 6 5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </span>
                 <span class="brand__text"><strong>Расписание университета</strong></span>
             </a>
-            <!-- Здесь позднее будут данные вошедшего администратора с сервера -->
+            
             <div class="user-panel">
                 <div class="user-panel__text">
                     <span class="user-panel__name">[Фамилия Имя Отчество]</span>
                     <span class="user-panel__meta">Администратор</span>
                 </div>
-                <!-- Пока кнопка выхода просто возвращает на страницу входа -->
+                
                 <a class="logout-button" href="index.html">Выйти</a>
             </div>
         </header>
 
         <main class="page-main">
-            <!-- Белая область с боковым меню и рабочей частью -->
+            
             <div class="admin-shell">
-                <!-- Внутри nav находятся переключатели разделов -->
+                
                 <aside class="admin-sidebar">
                     <nav class="admin-navigation" aria-label="Разделы администратора">
                         <button type="button" class="admin-nav-link is-current" data-section="dashboard">Панель управления</button>
@@ -48,7 +48,7 @@
                         <button type="button" class="admin-nav-link" data-section="classrooms">Аудитории</button>
                         <button type="button" class="admin-nav-link" data-section="subjects">Дисциплины</button>
                         <button type="button" class="admin-nav-link" data-section="groups">Учебные группы</button>
-                        <!-- Эти разделы есть в общем макете, но подробные макеты пока не приложены -->
+                        
                         <button type="button" class="admin-nav-link" data-section="teachers">Преподаватели</button>
                         <button type="button" class="admin-nav-link" data-section="lessons">Занятия</button>
                         <button type="button" class="admin-nav-link" data-section="import">Импорт из CSV</button>
@@ -58,13 +58,13 @@
                 </aside>
 
                 <div class="admin-content">
-                    <!-- Первая вкладка с показателями и сведениями о расписании -->
+                    
                     <section class="admin-section" id="section-dashboard" aria-labelledby="heading-dashboard">
                         <h1 class="admin-title" id="heading-dashboard">Панель управления</h1>
-                        <!-- Количества пересчитывает JavaScript по данным из списков -->
+                        
                         <div class="stats-grid" id="dashboard-stats"></div>
                         <div class="overview-grid">
-                            <article class="overview-card">
+                            <article class="overview-card" id="dashboard-published">
                                 <div class="overview-card__heading">
                                     <h2>Опубликованное расписание</h2>
                                     <span class="status-pill status-pill--green">Опубликовано</span>
@@ -74,7 +74,7 @@
                                 <p>Штраф: 86 · Конфликтов: 0</p>
                                 <button class="admin-button admin-button--outline" type="button" data-section-target="versions">Открыть версию</button>
                             </article>
-                            <article class="overview-card">
+                            <article class="overview-card" id="dashboard-latest">
                                 <div class="overview-card__heading">
                                     <h2>Последняя генерация</h2>
                                     <span class="status-pill status-pill--blue">Завершена</span>
@@ -90,15 +90,14 @@
                             <div class="notification-line">
                                 <span class="notification-line__symbol" aria-hidden="true">!</span>
                                 <div class="notification-line__text">
-                                    <strong>Возможный конфликт</strong>
-                                    <span>Преподаватель отметил недоступный слот, на который было назначено занятие</span>
+                                    <strong>Проверка расписания</strong>
+                                    <span>Перед публикацией черновика проверьте конфликты занятий и доступность аудиторий</span>
                                 </div>
                                 <button class="admin-button admin-button--outline" type="button" data-section-target="versions">Открыть расписание</button>
                             </div>
                         </article>
                     </section>
 
-                    <!-- Раздел пользователей: поиск, фильтр, кнопка создания и таблица -->
                     <section class="admin-section" id="section-users" aria-labelledby="heading-users" hidden>
                         <h1 class="admin-title" id="heading-users">Пользователи</h1>
                         <div class="admin-toolbar">
@@ -123,7 +122,6 @@
                         </div>
                     </section>
 
-                    <!-- Раздел аудиторий: поиск по номеру и таблица вместимости -->
                     <section class="admin-section" id="section-classrooms" aria-labelledby="heading-classrooms" hidden>
                         <h1 class="admin-title" id="heading-classrooms">Аудитории</h1>
                         <div class="admin-toolbar">
@@ -139,7 +137,6 @@
                         </div>
                     </section>
 
-                    <!-- Раздел дисциплин: поиск по названию или коду -->
                     <section class="admin-section" id="section-subjects" aria-labelledby="heading-subjects" hidden>
                         <h1 class="admin-title" id="heading-subjects">Дисциплины</h1>
                         <div class="admin-toolbar">
@@ -155,7 +152,6 @@
                         </div>
                     </section>
 
-                    <!-- Раздел учебных групп: количество студентов и занятий -->
                     <section class="admin-section" id="section-groups" aria-labelledby="heading-groups" hidden>
                         <h1 class="admin-title" id="heading-groups">Учебные группы</h1>
                         <div class="admin-toolbar">
@@ -171,39 +167,137 @@
                         </div>
                     </section>
 
-                    <!-- Пока в этих вкладках нет содержимого, оставляем рабочую область пустой -->
-                    <section class="admin-section" id="section-upcoming" hidden></section>
+                    <section class="admin-section" id="section-teachers" aria-labelledby="heading-teachers" hidden>
+                        <h1 class="admin-title" id="heading-teachers">Преподаватели</h1>
+                        <div class="admin-toolbar"><input class="admin-input admin-search" id="teachers-search" type="search" placeholder="Поиск по ФИО или дисциплине" aria-label="Поиск преподавателя"></div>
+                        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>ФИО</th><th>Дисциплины</th><th>Учётная запись</th><th>Действия</th></tr></thead><tbody id="teachers-table-body"></tbody></table></div>
+                    </section>
+                    <section class="admin-section" id="section-lessons" aria-labelledby="heading-lessons" hidden>
+                        <h1 class="admin-title" id="heading-lessons">Учебные занятия</h1>
+                        <div class="admin-toolbar"><div class="admin-toolbar__filters">
+                            <input class="admin-input admin-search" id="lessons-search" type="search" placeholder="Поиск по группе, дисциплине или преподавателю" aria-label="Поиск занятия">
+                            <select class="admin-select" id="lessons-group-filter" aria-label="Группа"><option value="all">Группа: все</option></select>
+                            <select class="admin-select" id="lessons-teacher-filter" aria-label="Преподаватель"><option value="all">Преподаватель: все</option></select>
+                        </div><button class="admin-button admin-button--primary" id="create-lesson" type="button">+ Создать занятие</button></div>
+                        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Группа</th><th>Дисциплина</th><th>Преподаватель</th><th>Тип занятия</th><th>В неделю</th><th>Действия</th></tr></thead><tbody id="lessons-table-body"></tbody></table></div>
+                    </section>
+                    <section class="admin-section" id="section-import" aria-labelledby="heading-import" hidden>
+                        <h1 class="admin-title" id="heading-import">Импорт из CSV</h1>
+                        <p class="admin-subtitle import-step">Шаг 2 из 3 · Проверка файла перед сохранением</p>
+
+                        <div class="import-controls">
+                            <label class="admin-field import-type-field" for="import-type">
+                                Тип данных
+                                <select class="admin-select" id="import-type">
+                                    <option value="classrooms">Аудитории</option>
+                                    <option value="groups">Учебные группы</option>
+                                    <option value="teachers">Преподаватели</option>
+                                    <option value="subjects">Дисциплины</option>
+                                    <option value="lessons">Занятия</option>
+                                </select>
+                            </label>
+                            <div class="admin-field import-file-field">
+                                <span>Файл</span>
+                                <div class="import-file-row">
+                                    <label class="admin-button admin-button--outline import-file-picker">
+                                        Выбрать файл
+                                        <input id="import-file" class="import-native-input" type="file" accept=".csv,text/csv" aria-label="Выбрать CSV-файл">
+                                    </label>
+                                    <span class="import-file-name" id="import-file-name"></span>
+                                </div>
+                            </div>
+                            <button class="import-download-link" id="download-csv" type="button">Скачать шаблон CSV</button>
+                        </div>
+
+                        <p id="import-message" class="import-message" role="status" hidden></p>
+                        <div id="import-preview" hidden>
+                            <div class="import-stats" id="import-stats"></div>
+                            <div id="import-errors-section">
+                                <h2 class="admin-heading import-errors-title">Строки с ошибками</h2>
+                                <div class="admin-table-wrap import-errors-table">
+                                    <table class="admin-table" aria-label="Строки с ошибками">
+                                        <thead><tr><th>Строка</th><th>Значение</th><th>Ошибка</th></tr></thead>
+                                        <tbody id="import-errors-body"></tbody>
+                                    </table>
+                                </div>
+                                <div class="import-advice">
+                                    <span class="import-advice-icon" aria-hidden="true">i</span>
+                                    <span id="import-advice-text"></span>
+                                </div>
+                            </div>
+                            <div class="dialog-actions import-actions">
+                                <button class="admin-button admin-button--primary" id="confirm-import" type="button">Подтвердить импорт</button>
+                                <button class="admin-button admin-button--outline" id="cancel-import" type="button">Отменить импорт</button>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="admin-section" id="section-generation" aria-labelledby="heading-generation" hidden>
+                        <h1 class="admin-title" id="heading-generation">Генерация расписания</h1>
+                        <p class="admin-subtitle">Проверьте данные, настройте приоритеты и запустите расчёт</p>
+                        <p class="inline-note demo-notice">Демонстрационный режим: генерация выполняется в браузере; подключение к Python JobManager ещё требуется</p>
+                        <div id="generation-settings" class="generation-grid">
+                            <article class="generation-panel"><h2>1. Проверка данных</h2>
+                                <button class="admin-button admin-button--outline" id="check-generation" type="button">Проверить данные</button>
+                                <p class="check-time" id="check-time"></p>
+                                <p><strong>Критических ошибок: <span id="critical-count">0</span></strong></p>
+                                <p><strong>Предупреждений: <span id="warning-count">0</span></strong></p>
+                                <div id="generation-issues" class="generation-issues"></div>
+                            </article>
+                            <article class="generation-panel"><h2>2. Приоритеты качества</h2><div id="quality-settings" class="quality-settings"></div>
+                                <label class="admin-field">Лимит времени, сек <input class="admin-input" id="generation-limit" type="number" min="1" max="600" step="1" value="120" required></label>
+                                <label class="admin-checkbox"><input type="checkbox" id="save-priorities"> Сохранить как настройки по умолчанию</label>
+                                <button class="admin-button admin-button--primary" id="start-generation" type="button">Запустить генерацию</button>
+                            </article>
+                        </div>
+                        <div id="generation-result" class="generation-result" hidden>
+                            <div class="generation-result__header"><strong id="generation-status">Выполняется</strong><p id="generation-caption"></p></div>
+                            <progress id="generation-progress" max="100" value="0"></progress><p id="generation-progress-text">0 %</p>
+                            <div class="generation-metrics"><div>Время<strong id="generation-time">00:00</strong></div><div>Итераций<strong id="generation-iterations">0</strong></div><div>Лучший штраф<strong id="generation-penalty">—</strong></div></div>
+                            <div class="dialog-actions"><button class="admin-button admin-button--outline" type="button" id="cancel-generation">Отменить</button><button class="admin-button admin-button--outline" type="button" id="restart-generation" hidden>Запустить снова</button><button class="admin-button admin-button--primary" type="button" id="open-generated-version" hidden>Открыть версию</button></div>
+                        </div>
+                        <div id="generation-log-panel" hidden><h2 class="admin-heading">Журнал этапов</h2><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Время</th><th>Сообщение</th></tr></thead><tbody id="generation-log"></tbody></table></div></div>
+                    </section>
+                    <section class="admin-section" id="section-versions" aria-labelledby="heading-versions" hidden>
+                        <h1 class="admin-title" id="heading-versions">Версии расписания</h1>
+                        <div class="admin-toolbar"><select class="admin-select" id="versions-status" aria-label="Статус версии"><option value="all">Статус: все</option><option value="draft">Черновики</option><option value="published">Опубликованные</option><option value="archived">Архив</option></select><button class="admin-button admin-button--outline" id="compare-selected" type="button">Сравнить выбранные (2)</button></div>
+                        <p class="admin-subtitle">Название версии можно изменить двойным щелчком</p>
+                        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th aria-label="Выбрать"></th><th>№</th><th>Название</th><th>Создана</th><th>Статус</th><th>Параметры</th><th>Штраф</th><th>Конфликты</th><th>Действия</th></tr></thead><tbody id="versions-table-body"></tbody></table></div>
+                    </section>
+                    <section class="admin-section" id="section-version-detail" hidden>
+                        <div class="detail-toolbar"><div><button class="text-button" id="back-to-versions" type="button">← Все версии</button><h1 class="admin-title" id="version-detail-heading">Версия</h1></div><div class="toolbar-actions"><button class="admin-button admin-button--outline" id="detail-copy" type="button">Сделать копию</button><button class="admin-button admin-button--primary" id="detail-publish" type="button">Опубликовать</button></div></div>
+                        <div class="admin-toolbar"><div class="admin-toolbar__filters"><select class="admin-select" id="schedule-view"><option value="group">Группа</option><option value="teacher">Преподаватель</option><option value="classroom">Аудитория</option><option value="all">Вся версия</option></select><select class="admin-select" id="schedule-entity" aria-label="Объект расписания"></select><select class="admin-select" id="schedule-type"><option value="all">Все типы занятий</option><option value="lecture">Лекция</option><option value="practice">Практика</option><option value="lab">Лаб. работа</option></select></div></div>
+                        <div class="schedule-layout"><div class="admin-table-wrap"><table class="admin-table schedule-table" id="version-schedule"><thead id="schedule-head"></thead><tbody id="schedule-body"></tbody></table><p class="inline-note">Нажмите на занятие, чтобы изменить его (только в черновике)</p></div><aside class="schedule-aside"><article class="generation-panel"><h3 id="version-conflicts-title">Конфликты (0)</h3><div id="version-conflicts"></div></article><article class="generation-panel"><h3>Показатели качества</h3><div id="version-quality"></div></article></aside></div>
+                    </section>
+                    <section class="admin-section" id="section-comparison" hidden><button class="text-button" id="back-from-comparison" type="button">← Все версии</button><h1 class="admin-title">Сравнение версий</h1><div id="comparison-summary"></div><h2 class="admin-heading">Изменённые занятия</h2><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Группа</th><th>Дисциплина</th><th>Было (Б)</th><th>Стало (А)</th></tr></thead><tbody id="comparison-body"></tbody></table></div></section>
+
                 </div>
             </div>
         </main>
 
-        <!-- Контакт администратора находится ниже кабинета и доступен прокруткой -->
         <footer class="page-footer">
             <span>Администратор системы: <a href="mailto:admin@example.com">[Email]</a></span>
         </footer>
     </div>
 
-    <!-- Одно всплывающее окно используется для всех четырёх форм -->
     <dialog class="admin-dialog" id="record-dialog" aria-labelledby="modal-title">
         <div class="admin-dialog__header">
             <h2 id="modal-title">Новая запись</h2>
             <button type="button" class="modal-close" id="modal-close" aria-label="Закрыть окно">×</button>
         </div>
 
-        <!-- У каждой формы отдельный id, чтобы не путать поля -->
         <form class="record-form" id="form-users" hidden novalidate>
-            <label class="admin-field">ФИО<input class="admin-input" id="user-name" autocomplete="off" placeholder="Фамилия Имя Отчество"></label>
-            <label class="admin-field">Логин<input class="admin-input" id="user-login" autocomplete="off" placeholder="Логин"></label>
-            <label class="admin-field">Email<input class="admin-input" id="user-email" type="email" autocomplete="off" placeholder="example@mail.ru"></label>
-            <label class="admin-field">Пароль<input class="admin-input" id="user-password" type="password" autocomplete="new-password" placeholder="Пароль для нового пользователя"></label>
-            <!-- Радиокнопки позволяют выбрать только одну роль -->
+            <label class="admin-field">ФИО<input class="admin-input" id="user-name" autocomplete="off" placeholder="Фамилия Имя Отчество" required></label>
+            <label class="admin-field">Логин<input class="admin-input" id="user-login" autocomplete="off" placeholder="Логин" required></label>
+            <label class="admin-field">Email<input class="admin-input" id="user-email" type="email" autocomplete="off" placeholder="example@mail.ru" required></label>
+            <label class="admin-field">Пароль<input class="admin-input" id="user-password" type="password" required autocomplete="new-password" placeholder="Пароль для нового пользователя"></label>
+            
             <fieldset class="admin-role-fieldset">
                 <legend>Роль</legend>
                 <label><input type="radio" name="user-role" value="admin"> Администратор</label>
                 <label><input type="radio" name="user-role" value="teacher"> Преподаватель</label>
                 <label><input type="radio" name="user-role" value="student" checked> Студент</label>
             </fieldset>
-            <!-- Выбор группы показывается только для роли Студент -->
+            
             <label class="admin-field" id="user-group-block">Учебная группа<select class="admin-select" id="user-group"></select></label>
             <p class="form-error" id="users-form-error" role="alert" hidden></p>
             <div class="dialog-actions">
@@ -214,31 +308,44 @@
         </form>
 
         <form class="record-form" id="form-classrooms" hidden novalidate>
-            <label class="admin-field">Номер аудитории<input class="admin-input" id="classroom-number" placeholder="Номер аудитории"></label>
-            <label class="admin-field">Вместимость<input class="admin-input" id="classroom-capacity" type="number" min="1" placeholder="Количество мест"></label>
+            <label class="admin-field">Номер аудитории<input class="admin-input" id="classroom-number" placeholder="Номер аудитории" required></label>
+            <label class="admin-field">Вместимость<input class="admin-input" id="classroom-capacity" type="number" min="1" max="10000" step="1" required placeholder="Количество мест"></label>
             <label class="admin-checkbox"><input id="classroom-active" type="checkbox" checked> Активна (доступна для занятий)</label>
             <p class="form-error" id="classrooms-form-error" role="alert" hidden></p>
             <div class="dialog-actions"><button class="admin-button admin-button--primary" type="submit">Сохранить</button><button class="admin-button admin-button--outline" type="button" data-cancel-dialog>Отмена</button></div>
         </form>
 
         <form class="record-form" id="form-subjects" hidden novalidate>
-            <label class="admin-field">Название<input class="admin-input" id="subject-name" placeholder="Название дисциплины"></label>
-            <label class="admin-field">Внутренний код<input class="admin-input" id="subject-code" placeholder="Код"></label>
+            <label class="admin-field">Название<input class="admin-input" id="subject-name" placeholder="Название дисциплины" required></label>
+            <label class="admin-field">Внутренний код<input class="admin-input" id="subject-code" placeholder="Код" required></label>
             <p class="form-error" id="subjects-form-error" role="alert" hidden></p>
             <div class="dialog-actions"><button class="admin-button admin-button--primary" type="submit">Сохранить</button><button class="admin-button admin-button--outline" type="button" data-cancel-dialog>Отмена</button></div>
         </form>
 
         <form class="record-form" id="form-groups" hidden novalidate>
-            <label class="admin-field">Номер или название группы<input class="admin-input" id="group-name" placeholder="Например, ИВТ-101"></label>
-            <label class="admin-field">Количество студентов<input class="admin-input" id="group-students" type="number" min="1" placeholder="Количество студентов"></label>
+            <label class="admin-field">Номер или название группы<input class="admin-input" id="group-name" placeholder="Например, ИВТ-101" required></label>
+            <label class="admin-field">Количество студентов<input class="admin-input" id="group-students" type="number" min="1" max="10000" step="1" required placeholder="Количество студентов"></label>
             <p class="form-error" id="groups-form-error" role="alert" hidden></p>
             <div class="dialog-actions"><button class="admin-button admin-button--primary" type="submit">Сохранить</button><button class="admin-button admin-button--outline" type="button" data-cancel-dialog>Отмена</button></div>
         </form>
     </dialog>
 
-    <!-- Этот блок сообщает о сохранении, но не закрывает другие части интерфейса -->
+    <dialog class="admin-dialog" id="extended-dialog" aria-labelledby="extended-dialog-title">
+        <div class="admin-dialog__header"><h2 id="extended-dialog-title"></h2><button type="button" class="modal-close" id="extended-dialog-close" aria-label="Закрыть">×</button></div>
+        <form id="teacher-form" class="record-form" hidden novalidate><p id="teacher-name-line"></p><p id="teacher-login-line"></p><label class="admin-field">Добавить дисциплину<select class="admin-select" id="teacher-subject-select"></select></label><div id="teacher-subject-chips" class="subject-chips"></div><p class="form-error" id="teacher-form-error" role="alert" hidden></p><div class="dialog-actions"><button class="admin-button admin-button--primary" type="submit">Сохранить</button><button type="button" class="admin-button admin-button--outline" data-extra-close>Отмена</button></div><p class="dialog-note">ФИО и учётная запись редактируются в разделе «Пользователи»</p></form>
+        <form id="lesson-form" class="record-form" hidden novalidate><label class="admin-field">Учебная группа<select class="admin-select" id="lesson-group" required></select></label><label class="admin-field">Дисциплина<select class="admin-select" id="lesson-subject" required></select></label><label class="admin-field">Преподаватель<select class="admin-select" id="lesson-teacher" required></select></label><p class="form-error" id="lesson-teacher-warning" hidden></p><fieldset class="admin-role-fieldset"><legend>Тип занятия</legend><label><input type="radio" name="lesson-type" value="lecture"> Лекция</label><label><input type="radio" name="lesson-type" value="practice" checked> Практика</label><label><input type="radio" name="lesson-type" value="lab"> Лаб. работа</label></fieldset><label class="admin-field">Занятий в неделю<input class="admin-input" id="lesson-weekly" type="number" min="1" max="42" step="1" value="2" required></label><p class="form-error" id="lesson-form-error" role="alert" hidden></p><div class="dialog-actions"><button class="admin-button admin-button--primary" type="submit">Сохранить</button><button type="button" class="admin-button admin-button--outline" data-extra-close>Отмена</button></div></form>
+        <form id="slot-form" class="record-form" hidden novalidate><p id="slot-description"></p><label class="admin-field">День<select class="admin-select" id="slot-day" required></select></label><label class="admin-field">Пара<select class="admin-select" id="slot-period" required></select></label><label class="admin-field">Аудитория<select class="admin-select" id="slot-room" required></select></label><label class="admin-field">Преподаватель<select class="admin-select" id="slot-teacher" required></select></label><p class="form-error" id="slot-form-error" role="alert" hidden></p><div class="dialog-actions"><button class="admin-button admin-button--primary" type="submit">Сохранить</button><button type="button" class="admin-button admin-button--outline" data-extra-close>Отмена</button></div></form>
+        <form id="rename-form" class="record-form" hidden novalidate><label class="admin-field">Название версии<input class="admin-input" id="rename-version" required maxlength="100"></label><p class="form-error" id="rename-form-error" hidden></p><div class="dialog-actions"><button class="admin-button admin-button--primary" type="submit">Сохранить</button><button type="button" class="admin-button admin-button--outline" data-extra-close>Отмена</button></div></form>
+    </dialog>
+    <dialog class="admin-dialog confirm-dialog" id="confirmation-dialog" aria-labelledby="confirmation-title"><h2 id="confirmation-title"></h2><p id="confirmation-description"></p><div class="dialog-actions"><button type="button" class="admin-button admin-button--primary" id="confirmation-yes">Подтвердить</button><button type="button" class="admin-button admin-button--outline" id="confirmation-no">Отмена</button></div></dialog>
+
     <div class="admin-toast" id="admin-toast" role="status" hidden></div>
-    <!-- Подключаем JavaScript внизу, когда нужные HTML-элементы уже созданы -->
+    
     <script src="admin.js"></script>
+    <script src="admin-data-and-lessons.js"></script>
+<script src="admin-csv.js"></script>
+<script src="admin-generation.js"></script>
+<script src="admin-versions.js"></script>
+<script src="admin-dashboard.js"></script>
 </body>
 </html>

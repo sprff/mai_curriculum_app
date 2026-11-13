@@ -1,26 +1,26 @@
 <!DOCTYPE html>
-<!-- lang="ru" говорит браузеру, что основной язык страницы русский -->
+
 <html lang="ru">
-<!-- head хранит служебную информацию, которая не показывается как содержимое страницы -->
+
 <head>
-    <!-- UTF-8 нужен для правильного отображения русских букв -->
+    
     <meta charset="UTF-8">
-    <!-- viewport помогает странице правильно подстраиваться под ширину телефона -->
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- title это название вкладки браузера -->
+    
     <title>Моё расписание — Студент</title>
-    <!-- Подключаем общий файл styles.css с внешним видом всех страниц -->
+    
     <link rel="stylesheet" href="styles.css">
 </head>
-<!-- body содержит всё, что пользователь видит на странице -->
+
 <body class="schedule-page">
-    <!-- Общая оболочка страницы: шапка, основная часть и подвал -->
+    
     <div class="page">
-        <!-- Шапка страницы с названием системы и данными пользователя -->
+        
         <header class="page-header">
-            <!-- Название системы сделано ссылкой -->
+            
             <a class="brand" href="student.html" aria-label="Расписание университета">
-                <!-- Синий квадрат с декоративной иконкой календаря -->
+                
                 <span class="brand__icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none">
                         <path d="M7 3V6M17 3V6M4.5 9H19.5M6 5H18C19.1 5 20 5.9 20 7V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V7C4 5.9 4.9 5 6 5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -29,68 +29,59 @@
                 <span class="brand__text"><strong>Расписание университета</strong></span>
             </a>
 
-            <!-- Справа показываем ФИО, роль пользователя и кнопку выхода -->
             <div class="user-panel">
                 <div class="user-panel__text">
-                    <!-- Вместо текста в квадратных скобках позже будут реальные данные пользователя -->
+                    
                     <span class="user-panel__name">[Фамилия Имя Отчество]</span>
                     <span class="user-panel__meta">Студент · группа [Номер группы]</span>
                 </div>
-                <!-- Пока кнопка Выход просто возвращает на страницу авторизации -->
+                
                 <a class="logout-button" href="index.html">Выйти</a>
             </div>
         </header>
 
-        <!-- Основная рабочая область страницы -->
         <main class="page-main">
-            <!-- Декоративное голубое пятно на фоне -->
+            
             <div class="background-shape background-shape--left" aria-hidden="true"></div>
-            <!-- Второе декоративное пятно на фоне -->
+            
             <div class="background-shape background-shape--right" aria-hidden="true"></div>
 
-            <!-- Большая белая область, внутри которой находятся меню и содержимое -->
             <section class="app-shell">
-                <!-- aside это боковая панель навигации -->
+                
                 <aside class="sidebar">
-                    <!-- nav хранит ссылки на разделы текущей роли -->
+                    
                     <nav class="sidebar__nav">
-                        <!-- Класс sidebar__link--active выделяет открытую сейчас вкладку синим -->
+                        
                         <a class="sidebar__link sidebar__link--active" href="student.html">Моё расписание</a>
                     </nav>
                 </aside>
 
-                <!-- Основное содержимое справа от бокового меню -->
                 <div class="content">
-                    <!-- Верхняя часть содержимого с заголовком -->
+                    
                     <div class="content__top">
                         <div>
-                            <!-- h1 это главный заголовок текущей страницы -->
+                            
                             <h1 class="content__title">Расписание группы [Номер группы]</h1>
                         </div>
 
                     </div>
 
-                    <!-- Блок для выбора нужной учебной недели -->
                     <div class="week-tools">
-                        <!-- select создаёт выпадающий список с неделями -->
-                        <!-- id нужен JavaScript, чтобы при необходимости найти этот список -->
-                        <!-- Кнопка слева выбирает предыдущую неделю -->
+
                         <button class="week-nav-button" type="button" data-week-nav="prev" aria-label="Предыдущая неделя">‹</button>
                         <select class="form-select week-select" id="student-week-select" aria-label="Выбор недели">
                             <option>21.10.2026 – 26.10.2026</option>
                             <option selected>28.10.2026 – 02.11.2026</option>
                             <option>04.11.2026 – 09.11.2026</option>
                         </select>
-                        <!-- Кнопка справа выбирает следующую неделю -->
+                        
                         <button class="week-nav-button" type="button" data-week-nav="next" aria-label="Следующая неделя">›</button>
                     </div>
 
-                    <!-- Блок с таблицей, которая занимает всю доступную ширину -->
                     <div class="table-wrapper">
-                        <!-- table это таблица расписания -->
-                        <!-- В столбцах дни недели, в строках номера пар -->
+
                         <table class="schedule-table" aria-label="Расписание студента">
-                            <!-- thead хранит верхнюю строку с названиями столбцов -->
+                            
                             <thead>
                                 <tr>
                                     <th class="schedule-table__time-head">Пара</th>
@@ -102,52 +93,52 @@
                                     <th>Суббота</th>
                                 </tr>
                             </thead>
-                            <!-- tbody хранит все строки расписания -->
+                            
                             <tbody>
                                 <tr>
-                                    <!-- Первая ячейка строки показывает номер пары и её время -->
+                                    
                                     <td class="schedule-table__time"><span class="pair-number">1 пара</span><span class="pair-time">9:00–10:30</span></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Высшая математика</span><span class="lesson-meta">Лекция · ауд. 301</span><span class="lesson-meta">Иванов И. О.</span></div></td>
-                                    <!-- Пустая карточка означает, что в этом слоте занятия нет -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Информатика</span><span class="lesson-meta">Лекция · ауд. 210</span><span class="lesson-meta">Петрова Н. С.</span></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Высшая математика</span><span class="lesson-meta">Лекция · ауд. 301</span><span class="lesson-meta">Иванов И. О.</span></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                 </tr>
                                 <tr>
-                                    <!-- Первая ячейка строки показывает номер пары и её время -->
+                                    
                                     <td class="schedule-table__time"><span class="pair-number">2 пара</span><span class="pair-time">10:45–12:15</span></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Физика</span><span class="lesson-meta">Лекция · ауд. 118</span><span class="lesson-meta">Смирнов А. А.</span></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Программирование</span><span class="lesson-meta">Практика · ауд. 405</span><span class="lesson-meta">Кузнецов Д. В.</span></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Информатика</span><span class="lesson-meta">Практика · ауд. 210</span><span class="lesson-meta">Петрова Н. С.</span></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Химия</span><span class="lesson-meta">Лаб. работа · ауд. 114</span><span class="lesson-meta">Орлова М. К.</span></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Программирование</span><span class="lesson-meta">Практика · ауд. 405</span><span class="lesson-meta">Кузнецов Д. В.</span></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                 </tr>
                                 <tr>
-                                    <!-- Первая ячейка строки показывает номер пары и её время -->
+                                    
                                     <td class="schedule-table__time"><span class="pair-number">3 пара</span><span class="pair-time">13:00–14:30</span></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Химия</span><span class="lesson-meta">Лаб. работа · ауд. 114</span><span class="lesson-meta">Орлова М. К.</span></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Физика</span><span class="lesson-meta">Практика · ауд. 118</span><span class="lesson-meta">Смирнов А. А.</span></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
-                                    <!-- Карточка одного занятия: дисциплина, тип, аудитория и преподаватель или группа -->
+                                    
                                     <td class="schedule-cell"><div class="lesson-card"><span class="lesson-title">Инженерная графика</span><span class="lesson-meta">Практика · ауд. 221</span><span class="lesson-meta">Егорова Е. В.</span></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                 </tr>
                                 <tr>
-                                    <!-- Первая ячейка строки показывает номер пары и её время -->
+                                    
                                     <td class="schedule-table__time"><span class="pair-number">4 пара</span><span class="pair-time">14:45–16:15</span></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
@@ -157,7 +148,7 @@
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                 </tr>
                                 <tr>
-                                    <!-- Первая ячейка строки показывает номер пары и её время -->
+                                    
                                     <td class="schedule-table__time"><span class="pair-number">5 пара</span><span class="pair-time">16:30–18:00</span></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
@@ -167,7 +158,7 @@
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                 </tr>
                                 <tr>
-                                    <!-- Первая ячейка строки показывает номер пары и её время -->
+                                    
                                     <td class="schedule-table__time"><span class="pair-number">6 пара</span><span class="pair-time">18:15–19:45</span></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
@@ -177,7 +168,7 @@
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                 </tr>
                                 <tr>
-                                    <!-- Первая ячейка строки показывает номер пары и её время -->
+                                    
                                     <td class="schedule-table__time"><span class="pair-number">7 пара</span><span class="pair-time">20:00–21:30</span></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
                                     <td class="schedule-cell"><div class="lesson-card lesson-card--empty"></div></td>
@@ -193,13 +184,11 @@
             </section>
         </main>
 
-        <!-- footer это нижняя часть страницы с контактом администратора -->
         <footer class="page-footer">
             <span>Администратор системы: <a href="mailto:admin@example.com">[Email]</a></span>
         </footer>
     </div>
 
-    <!-- Подключаем JavaScript для листания недель и работы с доступностью -->
     <script src="pages.js"></script>
 </body>
 </html>

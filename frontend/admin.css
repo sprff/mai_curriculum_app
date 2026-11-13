@@ -1,20 +1,16 @@
-/* Этот файл оформляет кабинет администратора */
-/* Общие цвета, шрифты и шапка уже заданы в styles.css */
 
-/* Основная часть администратора может прокручиваться вместе со страницей */
+
 .admin-page .page {
     min-height: 100vh;
     overflow: visible;
 }
 
-/* Оставляем вокруг белой рабочей карточки немного воздуха */
 .admin-page .page-main {
     display: block;
     min-height: 0;
     padding: 24px clamp(16px, 2vw, 30px) 40px;
 }
 
-/* Кабинет состоит из узкого меню и широкой рабочей области */
 .admin-shell {
     position: relative;
     width: 100%;
@@ -28,21 +24,18 @@
     box-shadow: 0 14px 36px rgba(23, 32, 51, 0.08);
 }
 
-/* Боковое меню с небольшим светлым фоном */
 .admin-sidebar {
     padding: 22px 12px;
     border-right: 1px solid #e9edf5;
     background: linear-gradient(180deg, #fafcff, #f7faff);
 }
 
-/* Ссылки меню идут друг под другом */
 .admin-navigation {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-/* У кнопок меню убираем стандартное браузерное оформление */
 .admin-nav-link {
     width: 100%;
     padding: 11px 13px;
@@ -58,32 +51,27 @@
     transition: background 0.15s ease, color 0.15s ease;
 }
 
-/* При наведении подсвечиваем вкладку светло-голубым */
 .admin-nav-link:hover {
     background: #ebf2ff;
     color: var(--primary-dark);
 }
 
-/* Синяя кнопка показывает выбранный раздел */
 .admin-nav-link.is-current {
     background: var(--primary);
     color: #ffffff;
     box-shadow: 0 7px 15px rgba(37, 99, 235, 0.18);
 }
 
-/* Справа находятся заголовок и содержимое выбранного раздела */
 .admin-content {
     min-width: 0;
     padding: clamp(22px, 2.1vw, 34px);
 }
 
-/* Скрытые разделы не должны занимать место на странице */
 .admin-section[hidden],
 .record-form[hidden] {
     display: none !important;
 }
 
-/* Названия разделов заметные, но без лишнего подзаголовка */
 .admin-title {
     margin: 0 0 26px;
     font-size: clamp(26px, 2.4vw, 34px);
@@ -92,7 +80,6 @@
     letter-spacing: -0.025em;
 }
 
-/* Пять карточек показателей в первом ряду панели управления */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -100,7 +87,6 @@
     margin-bottom: 18px;
 }
 
-/* Одна карточка с количеством групп или других записей */
 .stat-card {
     min-width: 0;
     padding: 20px 17px;
@@ -125,7 +111,6 @@
     line-height: 1.35;
 }
 
-/* Два больших информационных блока под показателями */
 .overview-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -174,12 +159,10 @@
     color: #172033;
 }
 
-/* Кнопку внутри карточки прижимаем к низу */
 .overview-card > .admin-button {
     margin-top: auto;
 }
 
-/* Короткие метки для разных состояний расписания */
 .status-pill {
     flex-shrink: 0;
     padding: 5px 10px;
@@ -198,13 +181,11 @@
     color: var(--primary-dark);
 }
 
-/* Уведомления занимают всю ширину под двумя карточками */
 .overview-card--notification {
     min-height: 160px;
     margin-top: 18px;
 }
 
-/* Строка с сообщением и кнопкой перехода */
 .notification-line {
     display: flex;
     align-items: center;
@@ -242,7 +223,6 @@
     color: #735d37;
 }
 
-/* Панель поиска и кнопки создания записи */
 .admin-toolbar {
     display: flex;
     align-items: center;
@@ -261,7 +241,6 @@
     min-width: 0;
 }
 
-/* Поля и списки во всех разделах одинаковые */
 .admin-input,
 .admin-select {
     width: 100%;
@@ -296,7 +275,6 @@
     width: 180px;
 }
 
-/* Общий вид кнопок во всём кабинете */
 .admin-button {
     display: inline-flex;
     align-items: center;
@@ -335,7 +313,6 @@
     background: #f6f9ff;
 }
 
-/* При большом числе строк таблица помещается в отдельную область */
 .admin-table-wrap {
     overflow: auto;
     border: 1px solid #e0e6ef;
@@ -349,7 +326,6 @@
     font-size: 13px;
 }
 
-/* Заголовки остаются видны при прокрутке таблицы */
 .admin-table thead th {
     position: sticky;
     top: 0;
@@ -392,7 +368,6 @@
     text-align: right;
 }
 
-/* Небольшая ссылка редактирования справа в строке */
 .admin-edit {
     padding: 7px 10px;
     border: 0;
@@ -414,7 +389,6 @@
     text-align: center;
 }
 
-/* Названия сортировок тоже выглядят как обычные заголовки */
 .sort-button {
     padding: 0;
     border: 0;
@@ -425,7 +399,6 @@
     cursor: pointer;
 }
 
-/* Помощь со скрытыми подписями для полей */
 .visually-hidden {
     position: absolute;
     width: 1px;
@@ -435,7 +408,6 @@
     white-space: nowrap;
 }
 
-/* Для непрорисованных разделов показываем честный информационный экран */
 .upcoming-card {
     display: flex;
     flex-direction: column;
@@ -471,7 +443,6 @@
     line-height: 1.5;
 }
 
-/* Браузер сам затемняет фон за открытым dialog */
 .admin-dialog {
     width: min(95vw, 470px);
     max-height: min(90vh, 850px);
@@ -503,7 +474,6 @@
     letter-spacing: -0.02em;
 }
 
-/* Крестик закрывает всплывающее окно */
 .modal-close {
     display: inline-flex;
     justify-content: center;
@@ -519,7 +489,6 @@
     cursor: pointer;
 }
 
-/* Поля в модальном окне идут вертикально */
 .record-form {
     display: flex;
     flex-direction: column;
@@ -577,7 +546,6 @@
     font-size: 13px;
 }
 
-/* Ошибка формы появляется под полями при неправильных данных */
 .form-error {
     margin: 0;
     padding: 10px 12px;
@@ -608,7 +576,6 @@
     line-height: 1.5;
 }
 
-/* Временное сообщение об успешном действии */
 .admin-toast {
     position: fixed;
     right: 25px;
@@ -629,7 +596,6 @@
     display: none;
 }
 
-/* На ноутбуке пять показателей размещаются в три столбца */
 @media (max-width: 1199px) {
     .stats-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -640,7 +606,6 @@
     }
 }
 
-/* На планшете оставляем две карточки в ряд и сужаем меню */
 @media (max-width: 850px) {
     .admin-shell {
         grid-template-columns: 158px minmax(0, 1fr);
@@ -665,7 +630,6 @@
     }
 }
 
-/* На телефоне меню становится горизонтальным над рабочей областью */
 @media (max-width: 620px) {
     .admin-page .page-main {
         padding: 14px 10px 24px;
@@ -734,3 +698,166 @@
         gap: 10px;
     }
 }
+
+.admin-section[hidden], .generation-result[hidden], .generation-grid[hidden], #generation-log-panel[hidden],
+#import-preview[hidden], .record-form[hidden], .dialog-actions [hidden], .admin-button[hidden] { display: none !important; }
+.admin-subtitle { margin: -12px 0 23px; color: #67758e; font-size: 14px; }
+.admin-heading { margin: 24px 0 14px; font-size: 19px; font-weight: 700; }
+.inline-note { font-size: 13px; color: #64748b; line-height: 1.6; }
+.demo-notice { padding: 10px 15px; border: 1px solid #dbe8fa; border-radius: 10px; background: #f6faff; }
+.admin-table td { overflow-wrap: anywhere; }
+.admin-table th { white-space: nowrap; }
+.admin-button:disabled, .admin-edit:disabled { opacity: .5; cursor: not-allowed; }
+.admin-toolbar { flex-wrap: wrap; gap: 12px; }
+.admin-toolbar__filters { flex-wrap: wrap; flex: 1 1 auto; }
+.admin-toolbar__filters .admin-search { min-width: 245px; flex: 1 1 270px; }
+/* Компоновка импорта повторяет макет; поле выбора файла оформлено отдельно от браузерного input */
+.import-step { margin: -15px 0 20px; }
+.import-controls {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(235px, 1fr) auto;
+    align-items: end;
+    gap: 22px;
+    margin-bottom: 18px;
+}
+.import-controls .admin-field { display: flex; flex-direction: column; gap: 7px; margin: 0; font-size: 13px; }
+.import-controls .admin-select { min-height: 42px; }
+.import-file-row { display: flex; align-items: center; gap: 13px; min-height: 42px; }
+.import-file-picker { position: relative; flex: 0 0 auto; min-height: 42px; overflow: hidden; }
+.import-native-input {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+.import-file-picker:focus-within { outline: 3px solid rgba(37, 99, 235, .24); outline-offset: 2px; }
+.import-file-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #4b5565; }
+.import-download-link {
+    justify-self: end;
+    align-self: center;
+    margin: 18px 0 0;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: var(--primary-dark);
+    text-decoration: underline;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.import-download-link:hover { color: var(--primary); }
+.import-message { margin: 12px 0; color: #b42332; font-size: 13px; line-height: 1.5; }
+.import-message[hidden] { display: none !important; }
+.import-stats {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 11px;
+    min-height: 75px;
+    margin: 18px 0 20px;
+    padding: 18px 20px;
+    border: 1px solid #dbe5f5;
+    border-radius: 11px;
+    background: #fff;
+    font-size: 14px;
+}
+.import-stats strong { color: #192b45; font-weight: 750; }
+.import-stats .import-stat-errors, .import-stat-errors strong { color: #d54747; }
+.import-stats .import-stat-separator { color: #8b97a8; }
+.import-errors-title { margin: 0 0 12px; font-size: 17px; }
+.import-errors-table { margin-bottom: 18px; }
+.import-errors-table .admin-table { min-width: 520px; }
+.import-errors-table .admin-table th:first-child { width: 88px; }
+.import-errors-table .admin-table th:nth-child(2) { width: 36%; }
+.import-errors-table .admin-table td { color: #d54747; }
+.import-advice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 17px;
+    margin-bottom: 15px;
+    border: 1px solid #dbe5f5;
+    border-radius: 11px;
+    background: #fff;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.6;
+}
+.import-advice-icon {
+    display: inline-flex;
+    flex: 0 0 23px;
+    align-items: center;
+    justify-content: center;
+    height: 23px;
+    border: 1.5px solid #3e5069;
+    border-radius: 50%;
+    font-style: normal;
+    font-weight: 750;
+}
+.import-actions { justify-content: flex-start; margin: 0; }
+@media (max-width: 1100px) {
+    .import-controls { grid-template-columns: minmax(170px, 220px) 1fr; gap: 14px; }
+    .import-download-link { grid-column: 1 / -1; justify-self: start; margin: 0; }
+}
+@media (max-width: 620px) {
+    .import-controls { grid-template-columns: minmax(0, 1fr); }
+    .import-file-row { flex-wrap: wrap; }
+    .import-download-link { grid-column: 1; }
+    .import-stats { padding: 14px; gap: 8px; }
+    .import-actions .admin-button { flex: 1 1 auto; }
+}
+.cell-invalid { color: #d54747; }
+.subject-chips { display: grid; gap: 8px; margin: 9px 0 20px; }
+.subject-chip { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; background: #f2f6fc; border: 1px solid #e1eaf6; border-radius: 8px; }
+.chip-remove { border: 0; background: transparent; color: #64748b; font-size: 22px; cursor: pointer; line-height: 1; }
+.generation-grid { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(360px, 1.1fr); gap: 18px; }
+.generation-panel { border: 1px solid #dae4f1; border-radius: 21px; padding: 22px; min-width: 0; background: #fff; }
+.generation-panel h2 { margin: 0 0 20px; font-size: 20px; }
+.generation-panel h3 { margin: 0 0 13px; font-size: 17px; }
+.generation-panel p { font-size: 13px; line-height: 1.6; }
+.check-time { color: #64748b; }
+.generation-issues { display: grid; gap: 9px; margin-top: 14px; }
+.issue { padding: 12px 14px; border-radius: 10px; font-size: 13px; margin: 0; }
+.issue--critical { background: #fff1f2; color: #bd303e; }
+.issue--warning { background: #fffbeb; color: #835e08; }
+.issue--success { background: #effbf4; color: #1f794a; }
+.quality-settings { display: grid; gap: 8px; margin-bottom: 17px; }
+.quality-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+.quality-row .admin-input { width: 84px; flex: 0 0 84px; padding: 7px 9px; }
+.generation-result { padding: 23px; border: 1px solid #dbe4ef; border-radius: 20px; background: white; }
+.generation-result__header strong { font-size: 19px; }
+.generation-result__header p { font-size: 13px; color: #64748b; }
+.generation-result progress { width: 100%; height: 16px; accent-color: #2563eb; margin: 14px 0 2px; }
+.generation-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 18px 0; }
+.generation-metrics > div { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: #64748b; }
+.generation-metrics strong { color: #1b2b45; font-size: 22px; }
+.generation-result .dialog-actions, .generation-panel .dialog-actions { justify-content: flex-start; flex-wrap: wrap; }
+.detail-toolbar { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 20px; flex-wrap: wrap; }
+.detail-toolbar .admin-title { margin-bottom: 0; }
+.toolbar-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+.text-button { border: 0; background: transparent; color: #2861b7; font-size: 13px; margin-bottom: 15px; padding: 0; cursor: pointer; }
+.schedule-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 16px; }
+.schedule-layout .admin-table-wrap { min-width: 0; }
+.schedule-aside { display: flex; flex-direction: column; gap: 15px; }
+.schedule-aside .generation-panel { padding: 16px; }
+.schedule-aside .cell-invalid { line-height: 1.5; border-bottom: 1px solid #f8d5d5; padding-bottom: 8px; }
+.schedule-table { min-width: 760px; table-layout: fixed; }
+.schedule-table th:first-child { width: 92px; }
+.schedule-table thead th { text-align: center; }
+.schedule-table td { padding: 5px; min-width: 105px; vertical-align: top; height: 86px; }
+.schedule-table .schedule-period { text-align: center; font-weight: 700; font-size: 12px; white-space: nowrap; }
+.schedule-period span { display: block; margin-top: 6px; font-size: 10px; font-weight: 400; color: #718096; }
+.schedule-lesson { display: block; text-align: left; white-space: normal; font-size: 11px; line-height: 1.45; width: 100%; padding: 9px; margin: 0 0 5px; border: 1px solid #cddff9; border-radius: 8px; color: #19447c; background: #eef5ff; cursor: pointer; }
+.schedule-lesson:hover:not(:disabled) { border-color: #447dde; background: #e2efff; }
+.schedule-lesson:disabled { color: #334155; opacity: 1; cursor: default; }
+.version-actions { min-width: 150px; white-space: normal; }
+.version-actions .admin-edit { margin: 2px 7px 2px 0; }
+.comparison-summary { margin: 20px 0 28px; }
+.confirm-dialog { max-width: 460px; }
+.confirm-dialog h2 { margin: 0 0 12px; font-size: 22px; }
+.confirm-dialog p { line-height: 1.5; color: #475569; }
+@media (max-width: 1250px) { .generation-grid { grid-template-columns: 1fr; } .schedule-layout { grid-template-columns: 1fr; } .schedule-aside { display: grid; grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px) { .generation-metrics { grid-template-columns: 1fr 1fr; } .generation-panel { padding: 16px; } .schedule-aside { grid-template-columns: 1fr; } .toolbar-actions { width: 100%; } .quality-row { font-size: 11px; } }
