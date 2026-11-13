@@ -81,3 +81,30 @@ func (h *Handler) DeleteUser(ctx context.Context, params api.DeleteUserParams) (
 	}
 	return &api.DeleteUserOK{}, nil
 }
+
+func (h *Handler) AuthRefresh(ctx context.Context, req *api.RefreshTokenRequest) (api.AuthRefreshRes, error) {
+	if h.service == nil {
+		return nil, auth.ErrUnavailable
+	}
+	result, err := h.service.Refresh(ctx, req.RefreshToken)
+	if errors.Is(err, auth.ErrInvalid) {
+		return &api.Error{Code: "INVALID_REFRESH_TOKEN", Message: "Invalid or expired refresh token"}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &api.AuthTokensInfo{AccessToken: result.AccessToken, RefreshToken: result.RefreshToken, ExpiresIn: result.ExpiresIn}, nil
+}
+func (h *Handler) AuthLogout(ctx context.Context, req *api.RefreshTokenRequest) (api.AuthLogoutRes, error) {
+	if h.service == nil {
+		return nil, auth.ErrUnavailable
+	}
+	err := h.service.Logout(ctx, req.RefreshToken)
+	if errors.Is(err, auth.ErrInvalid) {
+		return &api.Error{Code: "INVALID_REFRESH_TOKEN", Message: "Invalid or expired refresh token"}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &api.AuthLogoutNoContent{}, nil
+}

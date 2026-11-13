@@ -42,8 +42,8 @@ func TestRequestErrors(t *testing.T) {
 		{"malformed login JSON", "POST", "/api/v1/auth/login", "{", "", 400, "INVALID_REQUEST"},
 		{"missing password", "POST", "/api/v1/auth/login", `{"login":"student"}`, "", 400, "INVALID_REQUEST"},
 		{"login dependency missing", "POST", "/api/v1/auth/login", `{"login":"student","password":"example"}`, "", 503, "AUTH_UNAVAILABLE"},
-		{"logout needs no bearer", "POST", "/api/v1/auth/logout", `{"refresh_token":"example"}`, "", 501, "NOT_IMPLEMENTED"},
-		{"refresh needs no bearer", "POST", "/api/v1/auth/refresh", `{"refresh_token":"example"}`, "", 501, "NOT_IMPLEMENTED"},
+		{"logout needs no bearer", "POST", "/api/v1/auth/logout", `{"refresh_token":"example"}`, "", 503, "AUTH_UNAVAILABLE"},
+		{"refresh needs no bearer", "POST", "/api/v1/auth/refresh", `{"refresh_token":"example"}`, "", 503, "AUTH_UNAVAILABLE"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

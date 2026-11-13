@@ -146,3 +146,58 @@ func (s *Service) DeleteUser(ctx context.Context, id string) error {
 	}
 	return s.users.Delete(ctx, actor.ID, target)
 }
+
+func refreshDigest(raw string) string {
+	sum := sha256.Sum256([]byte(raw))
+	return hex.EncodeToString(sum[:])
+}
+
+func newRefresh() (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(raw), nil
+}
+
+func (s *Service) Refresh(ctx context.Context, old string) (Tokens, error) {
+	store, ok := s.sessions.(SessionStore)
+	if !ok {
+		return Tokens{}, ErrUnavailable
+	}
+	if old == "" {
+		return Tokens{}, ErrInvalid
+	}
+	next, err := newRefresh()
+	if err != nil {
+		return Tokens{}, err
+	}
+	userID, err := store.Rotate(ctx, refreshDigest(old), refreshDigest(next), s.now())
+	if err != nil {
+		return Tokens{}, err
+	}
+	user, err := s.users.ByID(ctx, userID)
+	if err != nil || !validUser(user) {
+		_ = store.Revoke(ctx, refreshDigest(next), s.now())
+		if errors.Is(err, ErrNotFound) || err == nil {
+			return Tokens{}, ErrInvalid
+		}
+		return Tokens{}, err
+	}
+	access, err := s.tokens.Issue(userID)
+	if err != nil {
+		return Tokens{}, err
+	}
+	return Tokens{AccessToken: access, RefreshToken: next, ExpiresIn: int(AccessTTL / time.Second)}, nil
+}
+
+func (s *Service) Logout(ctx context.Context, raw string) error {
+	store, ok := s.sessions.(SessionStore)
+	if !ok {
+		return ErrUnavailable
+	}
+	if raw == "" {
+		return ErrInvalid
+	}
+	return store.Revoke(ctx, refreshDigest(raw), s.now())
+}

@@ -165,8 +165,8 @@ func TestConfiguredAuthWithoutSessionStorage(t *testing.T) {
 	if data["access_token"] != nil || data["refresh_token"] != nil {
 		t.Fatal("tokens issued without persistent sessions")
 	}
-	request(t, handler, "POST", "/auth/logout", `{"refresh_token":"sample"}`, "", 501)
-	request(t, handler, "POST", "/auth/refresh", `{"refresh_token":"sample"}`, "", 501)
+	request(t, handler, "POST", "/auth/logout", `{"refresh_token":"sample"}`, "", 503)
+	request(t, handler, "POST", "/auth/refresh", `{"refresh_token":"sample"}`, "", 503)
 }
 
 type failingUsers struct{ httpUsers }

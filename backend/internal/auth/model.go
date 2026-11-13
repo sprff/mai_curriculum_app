@@ -94,3 +94,9 @@ func ParseID(id string) (int64, error) {
 func validUser(u User) bool {
 	return u.ID > 0 && u.ID <= 2147483647 && u.Login != "" && strings.TrimSpace(u.FullName) != "" && u.Role.Valid()
 }
+
+type SessionStore interface {
+	SessionCreator
+	Rotate(context.Context, string, string, time.Time) (int64, error)
+	Revoke(context.Context, string, time.Time) error
+}
