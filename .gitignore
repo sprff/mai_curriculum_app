@@ -1,5 +1,9 @@
 .idea
 
-*.yml
 *.env
+.env.*
+!.env.example
 generated
+
+# Legacy local backend config (may contain credentials).
+/backend/configs/config.yml

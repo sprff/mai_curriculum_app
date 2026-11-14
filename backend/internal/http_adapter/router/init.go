@@ -23,6 +23,8 @@ func New(services *service.Service, coreCfg handlers.CoreConfig) (http.Handler, 
 
 	openapiRouter, err := generated.NewServer(
 		h,
+		h,
+		generated.WithPathPrefix("/api/v1"),
 		generated.WithErrorHandler(errorHandler),
 	)
 	if err != nil {
@@ -30,7 +32,6 @@ func New(services *service.Service, coreCfg handlers.CoreConfig) (http.Handler, 
 	}
 
 	router := http.NewServeMux()
-	router.Handle("/api/v1/", http.StripPrefix("/api/v1", openapiRouter))
 	router.Handle("/", openapiRouter)
 
 	return router, nil
@@ -42,13 +43,7 @@ func errorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err
 	code := errorCode(err)
 	w.WriteHeader(code)
 
-	resp := generated.ErrorsResponse{
-		Errors: []generated.ErrorItem{
-			{
-				Message: err.Error(),
-			},
-		},
-	}
+	resp := generated.ErrorsResponse{Errors: []generated.ErrorItem{{Message: err.Error()}}}
 
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent(" ", " ")

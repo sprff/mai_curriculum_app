@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	api "backend/internal/http_adapter/router/generated"
 	"backend/internal/service"
 )
 
@@ -20,6 +21,9 @@ type Handler struct {
 	coreURL    string
 	httpClient *http.Client
 }
+
+var _ api.Handler = (*Handler)(nil)
+var _ api.SecurityHandler = (*Handler)(nil)
 
 func New(services *service.Service, cfg CoreConfig) (*Handler, error) {
 	coreURL, err := url.Parse(cfg.BaseURL)

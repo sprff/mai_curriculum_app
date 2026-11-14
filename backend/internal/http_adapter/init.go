@@ -1,28 +1,27 @@
 package http_adapter
 
 import (
+	"backend/internal/config"
 	"backend/internal/http_adapter/handlers"
 	"backend/internal/http_adapter/router"
 	"backend/internal/http_adapter/server"
 	"backend/internal/service"
 	"context"
 	"time"
-
-	"github.com/spf13/viper"
 )
 
 type HttpAdapter struct {
 	server *server.Server
 }
 
-func New(services *service.Service) (*HttpAdapter, error) {
-	coreTimeout := viper.GetDuration("core.timeout")
+func New(cfg config.Config, services *service.Service) (*HttpAdapter, error) {
+	coreTimeout := cfg.Core.Timeout
 	if coreTimeout == 0 {
 		coreTimeout = 10 * time.Second
 	}
 
 	r, err := router.New(services, handlers.CoreConfig{
-		BaseURL: viper.GetString("core.baseURL"),
+		BaseURL: cfg.Core.BaseURL,
 		Timeout: coreTimeout,
 	})
 	if err != nil {
@@ -30,8 +29,8 @@ func New(services *service.Service) (*HttpAdapter, error) {
 	}
 
 	serverCfg := server.ServerConfig{
-		Port:            viper.GetString("port"),
-		ShutdownTimeout: viper.GetDuration("shutdownTimeout"),
+		Port:            cfg.Port,
+		ShutdownTimeout: cfg.ShutdownTimeout,
 		// Include data loading before the request to core.
 		RequestTimeout: coreTimeout + 5*time.Second,
 	}

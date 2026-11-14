@@ -10,3 +10,18 @@
 
 ## Подключение хуков
 `git config core.hooksPath .githooks`
+
+## Запуск HTTP-сервера
+
+```
+cd backend
+set -a
+source .env
+set +a
+make generate
+make start
+```
+
+Настройки сервера, PostgreSQL и core задаются в `backend/configs/config.yaml`.
+Пароль PostgreSQL читается из переменной окружения `PG_PASSWORD`.
+Локальный `configs/config.yml` больше не используется.

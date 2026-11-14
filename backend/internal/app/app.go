@@ -1,6 +1,7 @@
 package app
 
 import (
+	"backend/internal/config"
 	"backend/internal/http_adapter"
 	"backend/internal/repository"
 	"backend/internal/service"
@@ -14,13 +15,12 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
-func Run() error {
+func Run(cfg config.Config) error {
 	logrus.Print("Initializing components...")
 
-	db, err := postgres.NewPostgresDB(context.Background(), viper.GetString("database.dsn"))
+	db, err := postgres.NewPostgresDB(context.Background(), cfg.PostgreSQL.DSN())
 	if err != nil {
 		return fmt.Errorf("initialize database: %w", err)
 	}
@@ -28,7 +28,7 @@ func Run() error {
 
 	repo := repository.NewRepository(db)
 	services := service.NewService(repo)
-	httpAdapter, err := http_adapter.New(services)
+	httpAdapter, err := http_adapter.New(cfg, services)
 	if err != nil {
 		return fmt.Errorf("initialize HTTP adapter: %w", err)
 	}

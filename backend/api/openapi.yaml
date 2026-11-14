@@ -1,14 +1,11 @@
 # Implemented backend API. Shared project contracts are in common/.
 openapi: 3.1.0
-
 info:
   title: MAI Curriculum
   version: 1.0.0
-
 servers:
   - url: http://localhost:8080/api/v1
     description: Local server
-
 paths:
   /ping:
     get:
@@ -27,7 +24,7 @@ paths:
               schema: {$ref: '#/components/schemas/ErrorsResponse'}
         default:
           $ref: '#/components/responses/UnexpectedError'
-
+      security: []
   /jobs:
     post:
       operationId: CreateGenerationJob
@@ -54,7 +51,6 @@ paths:
           $ref: '#/components/responses/CoreTimeout'
         default:
           $ref: '#/components/responses/UnexpectedError'
-
   /jobs/{job_id}:
     parameters:
       - name: job_id
@@ -86,7 +82,6 @@ paths:
           $ref: '#/components/responses/CoreTimeout'
         default:
           $ref: '#/components/responses/UnexpectedError'
-
   /jobs/{job_id}/cancel:
     parameters:
       - name: job_id
@@ -118,7 +113,972 @@ paths:
           $ref: '#/components/responses/CoreTimeout'
         default:
           $ref: '#/components/responses/UnexpectedError'
-
+  /users:
+    post:
+      operationId: CreateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublicInfo'
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /users/{id}:
+    delete:
+      operationId: DeleteUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ""
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /auth/login:
+    post:
+      operationId: AuthLogin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensInfo'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /auth/refresh:
+    post:
+      operationId: AuthRefresh
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensInfo'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /auth/logout:
+    post:
+      operationId: AuthLogout
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '204':
+          description: ""
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /auth/me:
+    get:
+      operationId: AuthMe
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublicInfo'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /classrooms:
+    get:
+      operationId: ListClassrooms
+      tags: [Classrooms]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Classroom'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    post:
+      operationId: CreateClassroom
+      tags: [Classrooms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassroomInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /classrooms/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    get:
+      operationId: GetClassroom
+      tags: [Classrooms]
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    put:
+      operationId: UpdateClassroom
+      tags: [Classrooms]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClassroomInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classroom'
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      operationId: DeleteClassroom
+      tags: [Classrooms]
+      responses:
+        '204':
+          description: ""
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /subjects:
+    get:
+      operationId: ListSubjects
+      tags: [Subjects]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    post:
+      operationId: CreateSubject
+      tags: [Subjects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /subjects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    get:
+      operationId: GetSubject
+      tags: [Subjects]
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    put:
+      operationId: UpdateSubject
+      tags: [Subjects]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubjectInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      operationId: DeleteSubject
+      tags: [Subjects]
+      responses:
+        '204':
+          description: ""
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /groups:
+    get:
+      operationId: ListGroups
+      tags: [Groups]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    post:
+      operationId: CreateGroup
+      tags: [Groups]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /groups/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    get:
+      operationId: GetGroup
+      tags: [Groups]
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    put:
+      operationId: UpdateGroup
+      tags: [Groups]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupInput'
+      responses:
+        '200':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      operationId: DeleteGroup
+      tags: [Groups]
+      responses:
+        '204':
+          description: ""
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /relation/teacher/{teacher_id}/subject/{subject_id}:
+    parameters:
+      - name: teacher_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    post:
+      operationId: CreateTeacherSubjectRelation
+      tags: [Relations]
+      responses:
+        '200':
+          description: ""
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      operationId: DeleteTeacherSubjectRelation
+      tags: [Relations]
+      responses:
+        '204':
+          description: ""
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  /relation/group/{group_id}/subject/{subject_id}:
+    parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/EntityId'
+    post:
+      operationId: CreateGroupSubjectRelation
+      tags: [Relations]
+      responses:
+        '200':
+          description: ""
+        !!merge <<:
+          '400':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '401':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '403':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '404':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+          '409':
+            description: ""
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    delete:
+      operationId: DeleteGroupSubjectRelation
+      tags: [Relations]
+      responses:
+        '204':
+          description: ""
+        '400':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
 components:
   schemas:
     ErrorsResponse:
@@ -297,11 +1257,197 @@ components:
         - type
       title: ValidationError
       type: object
-
+    EntityId:
+      type: integer
+      format: int64
+      minimum: 1
+      example: 1
+    Classroom:
+      type: object
+      required:
+        - id
+        - capacity
+        - room_number
+      properties:
+        id:
+          $ref: '#/components/schemas/EntityId'
+          readOnly: true
+        capacity:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 24
+        room_number:
+          type: string
+          minLength: 1
+          example: '202'
+    ClassroomInput:
+      type: object
+      required:
+        - capacity
+        - room_number
+      properties:
+        capacity:
+          type: integer
+          format: int32
+          minimum: 1
+        room_number:
+          type: string
+          minLength: 1
+          example: '202'
+    Subject:
+      type: object
+      required:
+        - id
+        - name
+        - weekly_number_of_lessons
+      properties:
+        id:
+          $ref: '#/components/schemas/EntityId'
+          readOnly: true
+        name:
+          type: string
+          minLength: 1
+          example: 'Математический анализ'
+        weekly_number_of_lessons:
+          type: integer
+          format: int32
+          minimum: 1
+    SubjectInput:
+      type: object
+      required:
+        - name
+        - weekly_number_of_lessons
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: 'Математический анализ'
+        weekly_number_of_lessons:
+          type: integer
+          format: int32
+          minimum: 1
+    Group:
+      type: object
+      required:
+        - id
+        - group_name
+      properties:
+        id:
+          $ref: '#/components/schemas/EntityId'
+          readOnly: true
+        group_name:
+          type: string
+          minLength: 1
+          example: 'ИВТ-101'
+    GroupInput:
+      type: object
+      required:
+        - group_name
+      properties:
+        group_name:
+          type: string
+          minLength: 1
+          example: 'ИВТ-101'
+    UserRoleEnum:
+      type: string
+      enum:
+        - ADMIN
+        - STUDENT
+        - TEACHER
+    UserPublicInfo:
+      type: object
+      required:
+        - id
+        - login
+        - fullName
+        - role
+      properties:
+        id:
+          type: string
+          readOnly: true
+        login:
+          type: string
+          minLength: 1
+        fullName:
+          type: string
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+    AuthTokensInfo:
+      type: object
+      required:
+        - expires_in
+        - access_token
+        - refresh_token
+      properties:
+        expires_in:
+          type: integer
+          minimum: 1
+          example: 600
+        access_token:
+          type: string
+          minLength: 1
+        refresh_token:
+          type: string
+          minLength: 1
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    # Request/Response schemas
+    CreateUserRequest:
+      type: object
+      required:
+        - login
+        - password
+        - fullName
+        - role
+      properties:
+        login:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          format: password
+          minLength: 1
+        fullName:
+          type: string
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/UserRoleEnum'
+    # UpdateUserRequest:
+    LoginRequest:
+      type: object
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          format: password
+          minLength: 1
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+          writeOnly: true
   responses:
     UnexpectedError:
-      description:
-       Unexpected handler error
+      description: Unexpected handler error
       content:
         application/json:
           schema:
@@ -336,3 +1482,10 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/HTTPValidationError'
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - BearerAuth: []
