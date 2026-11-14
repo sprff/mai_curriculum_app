@@ -59,33 +59,10 @@ func (u *Users) ByID(ctx context.Context, id int64) (auth.User, error) {
 	return scanUser(u.pool.QueryRow(ctx, "SELECT "+columns+" FROM public.users WHERE id=$1", id))
 }
 func (u *Users) ByLogin(ctx context.Context, login string) (auth.User, error) {
-	// Logins are case-sensitive by team agreement; never lowercase them.
-	rows, err := u.pool.Query(ctx, "SELECT "+columns+" FROM public.users WHERE login=$1 LIMIT 2", login)
-	if err != nil {
-		return auth.User{}, err
-	}
-	defer rows.Close()
-	var result auth.User
-	count := 0
-	for rows.Next() {
-		result, err = scanUser(rows)
-		if err != nil {
-			return auth.User{}, err
-		}
-		count++
-	}
-	if err := rows.Err(); err != nil {
-		return auth.User{}, err
-	}
-	if count == 0 {
-		return auth.User{}, auth.ErrNotFound
-	}
-	if count != 1 {
-		return auth.User{}, errors.New("ambiguous duplicate login in database")
-	}
-	return result, nil
+	// The database enforces UNIQUE(login); the agreed login comparison is case-sensitive.
+	return scanUser(u.pool.QueryRow(ctx, "SELECT "+columns+" FROM public.users WHERE login=$1", login))
 }
-func (u *Users) write(ctx context.Context, actorID int64, action func(pgx.Tx) error) error {
+func (u *Users) write(ctx context.Context, actorID, targetID int64, action func(pgx.Tx) error) error {
 	tx, err := u.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return err
@@ -95,11 +72,24 @@ func (u *Users) write(ctx context.Context, actorID int64, action func(pgx.Tx) er
 		defer cancel()
 		_ = tx.Rollback(rollbackCtx)
 	}()
-	// The supplied schema has no UNIQUE(login). Serialize writes and admin-count checks
-	// against other DML while this transaction runs; no constraint or table is added.
-	if _, err := tx.Exec(ctx, "LOCK TABLE public.users IN SHARE ROW EXCLUSIVE MODE"); err != nil {
+	// Lock administrator and target rows in a consistent order. This serializes
+	// administrator changes while allowing unrelated user writes to proceed.
+	rows, err := tx.Query(ctx, "SELECT id FROM public.users WHERE role = 'admin' OR id = $1 ORDER BY id FOR UPDATE", targetID)
+	if err != nil {
 		return err
 	}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			rows.Close()
+			return err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return err
+	}
+	rows.Close()
 	var role string
 	if err := tx.QueryRow(ctx, "SELECT role::text FROM public.users WHERE id=$1", actorID).Scan(&role); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -117,14 +107,7 @@ func (u *Users) write(ctx context.Context, actorID int64, action func(pgx.Tx) er
 }
 func (u *Users) Create(ctx context.Context, actorID int64, input auth.NewUser) (auth.User, error) {
 	var result auth.User
-	err := u.write(ctx, actorID, func(tx pgx.Tx) error {
-		var exists bool
-		if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM public.users WHERE login=$1)", input.Login).Scan(&exists); err != nil {
-			return err
-		}
-		if exists {
-			return auth.ErrConflict
-		}
+	err := u.write(ctx, actorID, actorID, func(tx pgx.Tx) error {
 		var err error
 		result, err = scanUser(tx.QueryRow(ctx,
 			"INSERT INTO public.users (login, name, role, password_hash) VALUES ($1,$2,$3::public.order_roles,$4) RETURNING "+columns,
@@ -137,7 +120,7 @@ func (u *Users) Delete(ctx context.Context, actorID, targetID int64) error {
 	if actorID == targetID {
 		return auth.ErrSelfDelete
 	}
-	return mapWriteError(u.write(ctx, actorID, func(tx pgx.Tx) error {
+	return mapWriteError(u.write(ctx, actorID, targetID, func(tx pgx.Tx) error {
 		var role string
 		err := tx.QueryRow(ctx, "SELECT role::text FROM public.users WHERE id=$1", targetID).Scan(&role)
 		if errors.Is(err, pgx.ErrNoRows) {
