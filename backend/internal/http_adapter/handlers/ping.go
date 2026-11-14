@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	api "backend/internal/http_adapter/router/generated"
 	"context"
+
+	api "backend/internal/http_adapter/router/generated"
 )
 
 func (h *Handler) Ping(ctx context.Context) (api.PingRes, error) {

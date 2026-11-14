@@ -6,7 +6,6 @@ postgresql:
   port: 5432
   database: curriculum
   user: postgres
-  password: ""
   sslMode: disable
   connectTimeout: 5s
 

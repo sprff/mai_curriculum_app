@@ -1,13 +1,13 @@
 package http_adapter
 
 import (
+	"context"
+	"time"
+
 	"backend/internal/config"
-	"backend/internal/http_adapter/handlers"
 	"backend/internal/http_adapter/router"
 	"backend/internal/http_adapter/server"
 	"backend/internal/service"
-	"context"
-	"time"
 )
 
 type HttpAdapter struct {
@@ -20,7 +20,7 @@ func New(cfg config.Config, services *service.Service) (*HttpAdapter, error) {
 		coreTimeout = 10 * time.Second
 	}
 
-	r, err := router.New(services, handlers.CoreConfig{
+	r, err := router.New(services, config.Core{
 		BaseURL: cfg.Core.BaseURL,
 		Timeout: coreTimeout,
 	})

@@ -17,54 +17,54 @@ import (
 func (h *Handler) CreateGenerationJob(ctx context.Context) (api.CreateGenerationJobRes, error) {
 	request, err := h.services.GetGenerationRequest(ctx)
 	if err != nil {
-		return &api.CreateGenerationJobInternalServerError{Errors: []api.ErrorItem{{Message: "error loading generation data"}}}, nil
+		return &api.CreateGenerationJobInternalServerError{Code: "500", Message: "error loading generation data"}, nil
 	}
 
 	status, data, err := h.requestCore(ctx, http.MethodPost, "/jobs", request)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return &api.CreateGenerationJobGatewayTimeout{Errors: []api.ErrorItem{{Message: "core request timed out"}}}, nil
+			return &api.CreateGenerationJobGatewayTimeout{Code: "504", Message: "core request timed out"}, nil
 		}
-		return &api.CreateGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "error communicating with core"}}}, nil
+		return &api.CreateGenerationJobBadGateway{Code: "502", Message: "error communicating with core"}, nil
 	}
 
 	switch status {
 	case http.StatusAccepted:
 		var result api.JobCreated
 		if err := json.Unmarshal(data, &result); err != nil || result.JobID == "" {
-			return &api.CreateGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "invalid job response from core"}}}, nil
+			return &api.CreateGenerationJobBadGateway{Code: "502", Message: "invalid job response from core"}, nil
 		}
 		return &result, nil
 	case http.StatusUnprocessableEntity:
 		var result api.ValidationIssues
 		if err := json.Unmarshal(data, &result); err != nil {
-			return &api.CreateGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "invalid validation response from core"}}}, nil
+			return &api.CreateGenerationJobBadGateway{Code: "502", Message: "invalid validation response from core"}, nil
 		}
 		return &result, nil
 	default:
-		return &api.CreateGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "unexpected response from core"}}}, nil
+		return &api.CreateGenerationJobBadGateway{Code: "502", Message: "unexpected response from core"}, nil
 	}
 }
 
 func (h *Handler) GetGenerationJob(ctx context.Context, params api.GetGenerationJobParams) (api.GetGenerationJobRes, error) {
 	id := params.JobID
 	if strings.TrimSpace(id) == "" || id == "." || id == ".." {
-		return &api.GetGenerationJobBadRequest{Errors: []api.ErrorItem{{Message: "invalid job ID"}}}, nil
+		return &api.GetGenerationJobBadRequest{Code: "400", Message: "invalid job ID"}, nil
 	}
 
 	status, data, err := h.requestCore(ctx, http.MethodGet, "/jobs/"+url.PathEscape(id), nil)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return &api.GetGenerationJobGatewayTimeout{Errors: []api.ErrorItem{{Message: "core request timed out"}}}, nil
+			return &api.GetGenerationJobGatewayTimeout{Code: "504", Message: "core request timed out"}, nil
 		}
-		return &api.GetGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "error communicating with core"}}}, nil
+		return &api.GetGenerationJobBadGateway{Code: "502", Message: "error communicating with core"}, nil
 	}
 
 	switch status {
 	case http.StatusOK:
 		var result api.JobState
 		if err := json.Unmarshal(data, &result); err != nil {
-			return &api.GetGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "invalid job response from core"}}}, nil
+			return &api.GetGenerationJobBadGateway{Code: "502", Message: "invalid job response from core"}, nil
 		}
 		return &result, nil
 	case http.StatusNotFound:
@@ -72,33 +72,33 @@ func (h *Handler) GetGenerationJob(ctx context.Context, params api.GetGeneration
 	case http.StatusUnprocessableEntity:
 		var result api.HTTPValidationError
 		if err := json.Unmarshal(data, &result); err != nil {
-			return &api.GetGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "invalid validation response from core"}}}, nil
+			return &api.GetGenerationJobBadGateway{Code: "502", Message: "invalid validation response from core"}, nil
 		}
 		return &result, nil
 	default:
-		return &api.GetGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "unexpected response from core"}}}, nil
+		return &api.GetGenerationJobBadGateway{Code: "502", Message: "unexpected response from core"}, nil
 	}
 }
 
 func (h *Handler) CancelGenerationJob(ctx context.Context, params api.CancelGenerationJobParams) (api.CancelGenerationJobRes, error) {
 	id := params.JobID
 	if strings.TrimSpace(id) == "" || id == "." || id == ".." {
-		return &api.CancelGenerationJobBadRequest{Errors: []api.ErrorItem{{Message: "invalid job ID"}}}, nil
+		return &api.CancelGenerationJobBadRequest{Code: "400", Message: "invalid job ID"}, nil
 	}
 
 	status, data, err := h.requestCore(ctx, http.MethodPost, "/jobs/"+url.PathEscape(id)+"/cancel", nil)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return &api.CancelGenerationJobGatewayTimeout{Errors: []api.ErrorItem{{Message: "core request timed out"}}}, nil
+			return &api.CancelGenerationJobGatewayTimeout{Code: "504", Message: "core request timed out"}, nil
 		}
-		return &api.CancelGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "error communicating with core"}}}, nil
+		return &api.CancelGenerationJobBadGateway{Code: "502", Message: "error communicating with core"}, nil
 	}
 
 	switch status {
 	case http.StatusOK:
 		var result api.JobState
 		if err := json.Unmarshal(data, &result); err != nil {
-			return &api.CancelGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "invalid job response from core"}}}, nil
+			return &api.CancelGenerationJobBadGateway{Code: "502", Message: "invalid job response from core"}, nil
 		}
 		return &result, nil
 	case http.StatusNotFound:
@@ -106,11 +106,11 @@ func (h *Handler) CancelGenerationJob(ctx context.Context, params api.CancelGene
 	case http.StatusUnprocessableEntity:
 		var result api.HTTPValidationError
 		if err := json.Unmarshal(data, &result); err != nil {
-			return &api.CancelGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "invalid validation response from core"}}}, nil
+			return &api.CancelGenerationJobBadGateway{Code: "502", Message: "invalid validation response from core"}, nil
 		}
 		return &result, nil
 	default:
-		return &api.CancelGenerationJobBadGateway{Errors: []api.ErrorItem{{Message: "unexpected response from core"}}}, nil
+		return &api.CancelGenerationJobBadGateway{Code: "502", Message: "unexpected response from core"}, nil
 	}
 }
 

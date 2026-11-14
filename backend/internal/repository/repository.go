@@ -1,11 +1,10 @@
 package repository
 
 import (
-	"backend/internal/model"
 	"context"
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	"backend/internal/model"
 )
 
 type GenerationPostgres struct {

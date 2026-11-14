@@ -17,13 +17,18 @@ type Config struct {
 }
 
 type PostgreSQL struct {
-	Host           string        `yaml:"host" `
-	Port           int           `yaml:"port" `
+	Host           string        `yaml:"host"`
+	Port           int           `yaml:"port"`
 	Database       string        `yaml:"database"`
 	User           string        `yaml:"user"`
 	Password       string        `yaml:"-" env:"PG_PASSWORD"`
 	SSLMode        string        `yaml:"sslMode"`
 	ConnectTimeout time.Duration `yaml:"connectTimeout"`
+}
+
+type Core struct {
+	BaseURL string        `yaml:"baseURL"`
+	Timeout time.Duration `yaml:"timeout"`
 }
 
 func Load(path string) (Config, error) {
@@ -32,11 +37,6 @@ func Load(path string) (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
-}
-
-type Core struct {
-	BaseURL string        `yaml:"baseURL"`
-	Timeout time.Duration `yaml:"timeout"`
 }
 
 func (cfg PostgreSQL) DSN() string {

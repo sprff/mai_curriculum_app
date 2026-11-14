@@ -1,21 +1,24 @@
 package router
 
 import (
-	"backend/internal/http_adapter/handlers"
-	"backend/internal/http_adapter/router/generated"
-	"backend/internal/service"
 	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
+
+	"backend/internal/config"
+	"backend/internal/http_adapter/handlers"
+	"backend/internal/http_adapter/router/generated"
+	"backend/internal/service"
 
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/ogen-go/ogen/validate"
 )
 
-func New(services *service.Service, coreCfg handlers.CoreConfig) (http.Handler, error) {
+func New(services *service.Service, coreCfg config.Core) (http.Handler, error) {
 	h, err := handlers.New(services, coreCfg)
 	if err != nil {
 		return nil, err
@@ -43,7 +46,7 @@ func errorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err
 	code := errorCode(err)
 	w.WriteHeader(code)
 
-	resp := generated.ErrorsResponse{Errors: []generated.ErrorItem{{Message: err.Error()}}}
+	resp := generated.Error{Code: strconv.Itoa(code), Message: err.Error()}
 
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent(" ", " ")

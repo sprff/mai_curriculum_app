@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 
 	api "backend/internal/http_adapter/router/generated"
 )
@@ -30,10 +31,9 @@ func (h *Handler) NewError(_ context.Context, err error) *api.UnexpectedErrorSta
 
 	return &api.UnexpectedErrorStatusCode{
 		StatusCode: code,
-		Response: api.ErrorsResponse{
-			Errors: []api.ErrorItem{
-				{Message: err.Error()},
-			},
+		Response: api.Error{
+			Code:    strconv.Itoa(code),
+			Message: err.Error(),
 		},
 	}
 }

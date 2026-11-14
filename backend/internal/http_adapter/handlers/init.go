@@ -7,14 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"backend/internal/config"
 	api "backend/internal/http_adapter/router/generated"
 	"backend/internal/service"
 )
-
-type CoreConfig struct {
-	BaseURL string
-	Timeout time.Duration
-}
 
 type Handler struct {
 	services   *service.Service
@@ -25,7 +21,7 @@ type Handler struct {
 var _ api.Handler = (*Handler)(nil)
 var _ api.SecurityHandler = (*Handler)(nil)
 
-func New(services *service.Service, cfg CoreConfig) (*Handler, error) {
+func New(services *service.Service, cfg config.Core) (*Handler, error) {
 	coreURL, err := url.Parse(cfg.BaseURL)
 	if err != nil {
 		return nil, errors.New("invalid core base URL")

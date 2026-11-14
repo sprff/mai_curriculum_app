@@ -1,11 +1,6 @@
 package app
 
 import (
-	"backend/internal/config"
-	"backend/internal/http_adapter"
-	"backend/internal/repository"
-	"backend/internal/service"
-	"backend/pkg/postgres"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"backend/internal/config"
+	"backend/internal/http_adapter"
+	"backend/internal/repository"
+	"backend/internal/service"
+	"backend/pkg/postgres"
 
 	"github.com/sirupsen/logrus"
 )
