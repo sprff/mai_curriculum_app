@@ -1,9 +1,9 @@
 'use strict'
 
 // Деморежим использует тестовых пользователей вместо серверной авторизации
-const DEMO_MODE = true
+const DEMO_MODE = false
 
-const LOGIN_API_URL = '/api/auth/login'
+const LOGIN_API_URL = '/api/v1/auth/login'
 
 const ROLE_ROUTES = {
     admin: 'admin.html',
@@ -42,7 +42,7 @@ form.addEventListener('submit', async (event) => {
 
     hideMessage()
 
-    const login = loginInput.value.trim()
+    const login = loginInput.value
 
     const password = passwordInput.value
 
@@ -121,11 +121,19 @@ async function requestLogin(login, password) {
         body: JSON.stringify({ login, password })
     })
 
-    if (response.status === 401) {
+    if (response.status === 404) {
         throw new AuthError(
             'invalid_credentials',
             'Неверный логин или пароль',
             'Проверьте данные и попробуйте снова'
+        )
+    }
+
+    if (response.status === 400) {
+        throw new AuthError(
+            'invalid_login',
+            'Проверьте логин',
+            'От 3 до 32 символов: английские буквы, цифры, точка, дефис и подчёркивание.'
         )
     }
 
@@ -145,7 +153,15 @@ async function requestLogin(login, password) {
         )
     }
 
-    return response.json()
+    const tokens = await response.json()
+    Auth.save(tokens)
+    try {
+        const profile = await Auth.profile()
+        return { role: profile.role.toLowerCase() }
+    } catch (error) {
+        try { await Auth.logout() } catch (_) { Auth.clear() }
+        throw error
+    }
 }
 
 async function demoLogin(login, password) {
