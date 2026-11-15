@@ -1,8 +1,6 @@
 package router
 
 import (
-	"backend/internal/http_adapter/handlers"
-	"backend/internal/http_adapter/router/generated"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,13 +8,21 @@ import (
 	"net/http"
 	"strconv"
 
+	"backend/internal/config"
+	"backend/internal/http_adapter/handlers"
+	"backend/internal/http_adapter/router/generated"
+	"backend/internal/service"
+
 	ht "github.com/ogen-go/ogen/http"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/ogen-go/ogen/validate"
 )
 
-func New() (http.Handler, error) {
-	h := handlers.New()
+func New(services *service.Service, coreCfg config.Core) (http.Handler, error) {
+	h, err := handlers.New(services, coreCfg)
+	if err != nil {
+		return nil, err
+	}
 
 	openapiRouter, err := generated.NewServer(
 		h,
@@ -40,10 +46,7 @@ func errorHandler(_ context.Context, w http.ResponseWriter, _ *http.Request, err
 	code := errorCode(err)
 	w.WriteHeader(code)
 
-	resp := generated.Error{
-		Code:    strconv.Itoa(code),
-		Message: err.Error(),
-	}
+	resp := generated.Error{Code: strconv.Itoa(code), Message: err.Error()}
 
 	encoder := json.NewEncoder(w)
 	encoder.SetIndent(" ", " ")

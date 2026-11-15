@@ -6,6 +6,7 @@ require (
 	github.com/go-faster/errors v0.8.0
 	github.com/go-faster/jx v1.2.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
+	github.com/lib/pq v1.12.3
 	github.com/ogen-go/ogen v1.24.0
 	github.com/sirupsen/logrus v1.10.2
 	go.opentelemetry.io/otel v1.45.0

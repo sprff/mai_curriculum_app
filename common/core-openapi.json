@@ -1,0 +1,520 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MAI Curriculum Core",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/jobs": {
+      "post": {
+        "summary": "Create Job",
+        "description": "Проверяет данные и ставит генерацию в очередь.",
+        "operationId": "create_job_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Неверный формат или проблемы в данных, генерация не запущена",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationIssues"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}": {
+      "get": {
+        "summary": "Get Job",
+        "description": "Возвращает состояние задачи.",
+        "operationId": "get_job_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Задачи с таким номером нет"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jobs/{job_id}/cancel": {
+      "post": {
+        "summary": "Cancel Job",
+        "description": "Отменяет задачу.",
+        "operationId": "cancel_job_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Задачи с таким номером нет"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Classroom": {
+        "properties": {
+          "id_number": {
+            "type": "integer",
+            "title": "Id Number"
+          },
+          "capacity": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Capacity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id_number",
+          "capacity"
+        ],
+        "title": "Classroom",
+        "description": "Аудитория."
+      },
+      "Group": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "size": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "size"
+        ],
+        "title": "Group",
+        "description": "Группа и её численность."
+      },
+      "GroupSubject": {
+        "properties": {
+          "group_id": {
+            "type": "integer",
+            "title": "Group Id"
+          },
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "subject_id"
+        ],
+        "title": "GroupSubject",
+        "description": "Группа изучает дисциплину."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JobCreated": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "JobCreated",
+        "description": "Ответ на запуск генерации: номер созданной задачи."
+      },
+      "JobState": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "progress_placed": {
+            "type": "integer",
+            "title": "Progress Placed"
+          },
+          "progress_total": {
+            "type": "integer",
+            "title": "Progress Total"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Lesson"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "cancel_requested": {
+            "type": "boolean",
+            "title": "Cancel Requested"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "progress_placed",
+          "progress_total",
+          "error",
+          "result",
+          "cancel_requested"
+        ],
+        "title": "JobState",
+        "description": "Состояние задачи, которое можно безопасно вернуть вызывающему коду"
+      },
+      "Lesson": {
+        "properties": {
+          "day": {
+            "type": "integer",
+            "title": "Day"
+          },
+          "lesson_number": {
+            "type": "integer",
+            "title": "Lesson Number"
+          },
+          "group_id": {
+            "type": "integer",
+            "title": "Group Id"
+          },
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          },
+          "teacher_id": {
+            "type": "integer",
+            "title": "Teacher Id"
+          },
+          "classroom_id": {
+            "type": "integer",
+            "title": "Classroom Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day",
+          "lesson_number",
+          "group_id",
+          "subject_id",
+          "teacher_id",
+          "classroom_id"
+        ],
+        "title": "Lesson",
+        "description": "Одна поставленная пара. day: 0 = понедельник."
+      },
+      "ScheduleRequest": {
+        "properties": {
+          "classrooms": {
+            "items": {
+              "$ref": "#/components/schemas/Classroom"
+            },
+            "type": "array",
+            "title": "Classrooms"
+          },
+          "subjects": {
+            "items": {
+              "$ref": "#/components/schemas/Subject"
+            },
+            "type": "array",
+            "title": "Subjects"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/Group"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "teacher_subjects": {
+            "items": {
+              "$ref": "#/components/schemas/TeacherSubject"
+            },
+            "type": "array",
+            "title": "Teacher Subjects"
+          },
+          "group_subjects": {
+            "items": {
+              "$ref": "#/components/schemas/GroupSubject"
+            },
+            "type": "array",
+            "title": "Group Subjects"
+          }
+        },
+        "type": "object",
+        "required": [
+          "classrooms",
+          "subjects",
+          "groups",
+          "teacher_subjects",
+          "group_subjects"
+        ],
+        "title": "ScheduleRequest",
+        "description": "Снимок данных для генерации."
+      },
+      "Subject": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "weekly_number_of_lessons": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Weekly Number Of Lessons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "weekly_number_of_lessons"
+        ],
+        "title": "Subject",
+        "description": "Дисциплина и сколько пар в неделю у каждой группы, которая её изучает."
+      },
+      "TeacherSubject": {
+        "properties": {
+          "teacher_id": {
+            "type": "integer",
+            "title": "Teacher Id"
+          },
+          "subject_id": {
+            "type": "integer",
+            "title": "Subject Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "teacher_id",
+          "subject_id"
+        ],
+        "title": "TeacherSubject",
+        "description": "Препод может вести дисциплину."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ValidationIssue": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ValidationIssue",
+        "description": "Проблема в данных: код и текст ошибки."
+      },
+      "ValidationIssues": {
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          }
+        },
+        "type": "object",
+        "required": [
+          "issues"
+        ],
+        "title": "ValidationIssues",
+        "description": "Ответ, если валидатор нашёл проблемы в данных."
+      }
+    }
+  }
+}

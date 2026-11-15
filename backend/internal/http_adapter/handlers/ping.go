@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 
-	ht "github.com/ogen-go/ogen/http"
+	api "backend/internal/http_adapter/router/generated"
 )
 
-func (h *Handler) Ping(_ context.Context) (string, error) {
-	return "", ht.ErrNotImplemented
+func (h *Handler) Ping(ctx context.Context) (api.PingRes, error) {
+	return new(api.PingOKApplicationJSON("pong")), nil
 }

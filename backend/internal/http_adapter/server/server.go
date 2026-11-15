@@ -24,12 +24,25 @@ func New(cfg ServerConfig, handler http.Handler) (*Server, error) {
 		cfg.ShutdownTimeout = 10 * time.Second
 	}
 
+	if cfg.RequestTimeout == 0 {
+		cfg.RequestTimeout = 30 * time.Second
+	}
+	if cfg.RequestTimeout < 0 {
+		return nil, errors.New("request timeout must be positive")
+	}
+
+	requestHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), cfg.RequestTimeout)
+		defer cancel()
+		handler.ServeHTTP(w, r.WithContext(ctx))
+	})
+
 	httpServer := &http.Server{
 		Addr:           ":" + cfg.Port,
-		Handler:        handler,
+		Handler:        requestHandler,
 		MaxHeaderBytes: 1 << 28,
 		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		WriteTimeout:   cfg.RequestTimeout + 5*time.Second,
 	}
 
 	return &Server{
@@ -88,4 +101,5 @@ func (s *Server) Shutdown(ctx context.Context) error {
 type ServerConfig struct {
 	Port            string
 	ShutdownTimeout time.Duration
+	RequestTimeout  time.Duration
 }

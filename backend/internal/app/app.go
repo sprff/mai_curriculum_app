@@ -1,24 +1,37 @@
 package app
 
 import (
-	"backend/internal/config"
-	"backend/internal/http_adapter"
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"backend/internal/config"
+	"backend/internal/http_adapter"
+	"backend/internal/repository"
+	"backend/internal/service"
+	"backend/pkg/postgres"
+
 	"github.com/sirupsen/logrus"
 )
 
-func Run(cfg config.Config) {
+func Run(cfg config.Config) error {
 	logrus.Print("Initializing components...")
 
-	httpAdapter, err := http_adapter.New(cfg)
+	db, err := postgres.NewPostgresDB(context.Background(), cfg.PostgreSQL.DSN())
 	if err != nil {
-		logrus.Fatal("error initializing http adapter")
+		return fmt.Errorf("initialize database: %w", err)
+	}
+	defer db.Close()
+
+	repo := repository.NewRepository(db)
+	services := service.NewService(repo)
+	httpAdapter, err := http_adapter.New(cfg, services)
+	if err != nil {
+		return fmt.Errorf("initialize HTTP adapter: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -41,14 +54,15 @@ func Run(cfg config.Config) {
 		cancel()
 	case err := <-serverDone:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logrus.Fatalf("error occured while running http-server: %s", err.Error())
+			return fmt.Errorf("run HTTP server: %w", err)
 		}
-		return
+		return nil
 	}
 
 	if err := <-serverDone; err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logrus.Errorf("error while shutting down http-server: %s", err.Error())
+		return fmt.Errorf("shut down HTTP server: %w", err)
 	}
 
 	logrus.Print("App is stopped.")
+	return nil
 }
