@@ -13,10 +13,16 @@ type Generation interface {
 
 type Service struct {
 	Generation
+	Classroom
+	Subject
+	Group
 }
 
 func NewService(repo *repository.Repository) *Service {
 	return &Service{
 		Generation: NewGenerationService(repo),
+		Classroom:  NewClassroomService(repo.Classroom),
+		Subject:    NewSubjectService(repo.Subject),
+		Group:      NewGroupService(repo.Group),
 	}
 }
