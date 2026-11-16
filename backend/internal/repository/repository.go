@@ -15,8 +15,18 @@ type Generation interface {
 	GetGenerationRequest(context.Context) (model.GenerationRequest, error)
 }
 
-type Repository struct{ Generation }
+type Repository struct {
+	Generation
+	Classroom
+	Subject
+	Group
+}
 
 func NewRepository(db *sql.DB) *Repository {
-	return &Repository{Generation: &GenerationPostgres{db: db}}
+	return &Repository{
+		Generation: &GenerationPostgres{db: db},
+		Classroom:  &ClassroomPostgres{db: db},
+		Subject:    &SubjectPostgres{db: db},
+		Group:      &GroupPostgres{db: db},
+	}
 }
