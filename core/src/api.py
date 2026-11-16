@@ -8,10 +8,12 @@ from pydantic import BaseModel
 from src.exceptions import JobNotFoundError
 from src.schemas import ScheduleRequest
 from src.service.job_manager import JobManager, JobState
-from src.service.validator import ValidationIssue, validate
+from src.service.schedule_service import ScheduleService, ScheduleValidationError
+from src.service.validator import ValidationIssue
 
 app = FastAPI(title="MAI Curriculum Core")
 job_manager = JobManager()
+schedule_service = ScheduleService(job_manager)
 
 
 class JobCreated(BaseModel):
@@ -51,18 +53,22 @@ def wrong_format(request: Request, error: RequestValidationError) -> JSONRespons
     },
 )
 def create_job(request: ScheduleRequest) -> JobCreated | JSONResponse:
-    """Проверяет данные и ставит генерацию в очередь."""
-    issues = validate(request)
-    if issues:
-        return JSONResponse(status_code=422, content=ValidationIssues(issues=issues).model_dump())
-    return JobCreated(job_id=job_manager.submit(request))
+    """Принимает запрос на запуск генерации."""
+    try:
+        job_id = schedule_service.start(request)
+    except ScheduleValidationError as error:
+        return JSONResponse(
+            status_code=422,
+            content=ValidationIssues(issues=error.issues).model_dump(),
+        )
+    return JobCreated(job_id=job_id)
 
 
 @app.get("/jobs/{job_id}", responses=NOT_FOUND)
 def get_job(job_id: str) -> JobState:
     """Возвращает состояние задачи."""
     try:
-        return job_manager.get(job_id)
+        return schedule_service.get_status(job_id)
     except JobNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
 
@@ -71,6 +77,6 @@ def get_job(job_id: str) -> JobState:
 def cancel_job(job_id: str) -> JobState:
     """Отменяет задачу."""
     try:
-        return job_manager.cancel(job_id)
+        return schedule_service.cancel(job_id)
     except JobNotFoundError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
