@@ -6,12 +6,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from src.exceptions import JobNotFoundError
-from src.schemas import ScheduleRequest
 from src.service.job_manager import JobManager, JobState
+from src.service.preferred_scheduler import PreferredScheduler, PreferredScheduleRequest
 from src.service.validator import ValidationIssue, validate
 
 app = FastAPI(title="MAI Curriculum Core")
-job_manager = JobManager()
+job_manager = JobManager(scheduler_factory=PreferredScheduler)
 
 
 class JobCreated(BaseModel):
@@ -50,7 +50,7 @@ def wrong_format(request: Request, error: RequestValidationError) -> JSONRespons
         }
     },
 )
-def create_job(request: ScheduleRequest) -> JobCreated | JSONResponse:
+def create_job(request: PreferredScheduleRequest) -> JobCreated | JSONResponse:
     """Проверяет данные и ставит генерацию в очередь."""
     issues = validate(request)
     if issues:
