@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+    
+    <meta charset="UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Моя доступность — Преподаватель</title>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    
+    <div class="page">
+        
+        <header class="page-header">
+            
+            <a class="brand" href="teacher-schedule.html" aria-label="Расписание университета">
+                
+                <span class="brand__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M7 3V6M17 3V6M4.5 9H19.5M6 5H18C19.1 5 20 5.9 20 7V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V7C4 5.9 4.9 5 6 5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+                <span class="brand__text"><strong>Расписание университета</strong></span>
+            </a>
+
+            <div class="user-panel">
+                <div class="user-panel__text">
+                    
+                    <span class="user-panel__name">[Фамилия Имя Отчество]</span>
+                    <span class="user-panel__meta">Преподаватель</span>
+                </div>
+                
+                <a class="logout-button" href="index.html">Выйти</a>
+            </div>
+        </header>
+
+        <main class="page-main">
+            
+            <div class="background-shape background-shape--left" aria-hidden="true"></div>
+            
+            <div class="background-shape background-shape--right" aria-hidden="true"></div>
+
+            <section class="app-shell">
+                
+                <aside class="sidebar">
+                    
+                    <nav class="sidebar__nav">
+                        <a class="sidebar__link" href="teacher-schedule.html">Моё расписание</a>
+                        
+                        <a class="sidebar__link sidebar__link--active" href="teacher-availability.html">Моя доступность</a>
+                    </nav>
+                </aside>
+
+                <div class="content">
+                    
+                    <div class="content__top">
+                        <div>
+                            
+                            <h1 class="content__title">Моя доступность</h1>
+                            
+                            <p class="content__subtitle">Отметьте слоты на выбранную неделю или примените их ко всем неделям</p>
+                        </div>
+                    </div>
+
+                    <div class="filters-row">
+
+                        <select class="form-select week-select" id="availability-week-select" aria-label="Выбор недели">
+                            <option>21.10.2026 – 26.10.2026</option>
+                            <option selected>28.10.2026 – 02.11.2026</option>
+                            <option>04.11.2026 – 09.11.2026</option>
+                        </select>
+
+                        <div class="radio-group" aria-label="Выбор режима отметки">
+                            <span class="form-field__label" style="margin:0">Что отмечаем:</span>
+                            
+                            <label class="radio-item"><input type="radio" name="availability-mode" value="unavailable" checked> Недоступен</label>
+                            
+                            <label class="radio-item"><input type="radio" name="availability-mode" value="preferred"> Предпочтителен</label>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        
+                        <button class="schedule-arrow schedule-arrow--prev" type="button" data-week-nav="prev" aria-label="Предыдущая неделя">‹</button>
+                        
+                        <button class="schedule-arrow schedule-arrow--next" type="button" data-week-nav="next" aria-label="Следующая неделя">›</button>
+
+                        <table class="schedule-table availability-table" aria-label="Доступность преподавателя">
+                            
+                            <thead>
+                                <tr>
+                                    <th class="schedule-table__time-head">Пара</th>
+                                    <th>Понедельник</th>
+                                    <th>Вторник</th>
+                                    <th>Среда</th>
+                                    <th>Четверг</th>
+                                    <th>Пятница</th>
+                                    <th>Суббота</th>
+                                </tr>
+                            </thead>
+                            
+                            <tbody>
+                                <tr>
+                                    
+                                    <td class="schedule-table__time"><span class="pair-number">1 пара</span><span class="pair-time">9:00–10:30</span></td>
+
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="unavailable">Недоступен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="unavailable">Недоступен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="unavailable">Недоступен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                </tr>
+                                <tr>
+                                    
+                                    <td class="schedule-table__time"><span class="pair-number">2 пара</span><span class="pair-time">10:45–12:15</span></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="preferred">Предпочтителен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="preferred">Предпочтителен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                </tr>
+                                <tr>
+                                    
+                                    <td class="schedule-table__time"><span class="pair-number">3 пара</span><span class="pair-time">13:00–14:30</span></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="preferred">Предпочтителен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="preferred">Предпочтителен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                </tr>
+                                <tr>
+                                    
+                                    <td class="schedule-table__time"><span class="pair-number">4 пара</span><span class="pair-time">14:45–16:15</span></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                </tr>
+                                <tr>
+                                    
+                                    <td class="schedule-table__time"><span class="pair-number">5 пара</span><span class="pair-time">16:30–18:00</span></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="unavailable">Недоступен</button></td>
+                                </tr>
+                                <tr>
+                                    
+                                    <td class="schedule-table__time"><span class="pair-number">6 пара</span><span class="pair-time">18:15–19:45</span></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="unavailable">Недоступен</button></td>
+                                </tr>
+                                <tr>
+                                    
+                                    <td class="schedule-table__time"><span class="pair-number">7 пара</span><span class="pair-time">20:00–21:30</span></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="unavailable">Недоступен</button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state=""></button></td>
+                                    <td class="schedule-cell"><button class="availability-cell" type="button" data-state="unavailable">Недоступен</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="actions-row">
+                        
+                        <button class="secondary-button" type="button" id="apply-all-button">Применить для каждой недели</button>
+                        
+                        <button class="secondary-button" type="button" id="cancel-availability-button">Отменить</button>
+                        
+                        <button class="primary-button" type="button" id="save-availability-button">Сохранить</button>
+                    </div>
+
+                    <div class="message message--success" id="availability-message" hidden style="margin-top: 18px; margin-bottom: 0;">
+                        <span class="message__icon" aria-hidden="true">✓</span>
+                        <div class="message__text">
+                            <strong id="availability-message-title">Изменения сохранены</strong>
+                            <span id="availability-message-description">Выбранные слоты сохранены для текущей недели</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="page-footer">
+            <span>Администратор системы: <a href="mailto:admin@example.com">[Email]</a></span>
+        </footer>
+    </div>
+
+    <script src="pages.js"></script>
+</body>
+</html>
