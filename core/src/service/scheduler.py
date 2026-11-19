@@ -3,6 +3,7 @@ import random
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from itertools import pairwise
 from threading import Event
 from typing import Callable
 
@@ -13,14 +14,15 @@ _DAYS = 6
 _LESSON_NUMBERS = range(1, 8)
 _MAX_PER_DAY = 4
 
-_W_GROUP_WINDOW = 10
-_W_TEACHER_WINDOW = 3
+_W_GROUP_WINDOW = 4
+_W_TEACHER_WINDOW = 1
 _W_EARLY = 2
 _W_LATE = 3
 _W_OVERLOAD = 5
 
 _FIRST_BUDGET = 2000
 _BUDGET_GROWTH = 1.5
+_EXTRA_ATTEMPTS = 3
 
 
 @dataclass(frozen=True)
@@ -62,15 +64,26 @@ class _Frame:
     applied: tuple | None = None
 
 
-def _windows(numbers: set[int]) -> int:
-    """Пустые пары между первой и последней парой дня."""
-    return max(numbers) - min(numbers) + 1 - len(numbers) if numbers else 0
+def _window_cost(numbers: set[int]) -> int:
+    """Сумма квадратов длин окон: одно окно в две пары хуже двух окон по одной."""
+    return sum((b - a - 1) ** 2 for a, b in pairwise(sorted(numbers)))
 
 
 def _group_day_cost(numbers: set[int]) -> int:
     """Штраф дня группы: окна, перегрузка, первые и поздние пары."""
-    cost = _W_GROUP_WINDOW * _windows(numbers) + _W_OVERLOAD * (len(numbers) > _MAX_PER_DAY)
+    cost = _W_GROUP_WINDOW * _window_cost(numbers) + _W_OVERLOAD * (len(numbers) > _MAX_PER_DAY)
     return cost + sum(_W_EARLY * (n == 1) + _W_LATE * (n >= 6) for n in numbers)
+
+
+def _cost(lessons: list[Lesson]) -> int:
+    """Штраф готового расписания: дни групп и окна преподавателей."""
+    group_days: dict[tuple[int, int], set[int]] = defaultdict(set)
+    teacher_days: dict[tuple[int, int], set[int]] = defaultdict(set)
+    for x in lessons:
+        group_days[(x.group_id, x.day)].add(x.lesson_number)
+        teacher_days[(x.teacher_id, x.day)].add(x.lesson_number)
+    cost = sum(_group_day_cost(numbers) for numbers in group_days.values())
+    return cost + _W_TEACHER_WINDOW * sum(_window_cost(numbers) for numbers in teacher_days.values())
 
 
 class _NoNoise:
@@ -107,7 +120,7 @@ class _Windows(_PenaltyRule):
 
     def cost(self, ctx: _DayContext) -> int:
         numbers = getattr(ctx, self.lessons)
-        return self.weight * (_windows(numbers | {ctx.lesson_number}) - _windows(numbers))
+        return self.weight * (_window_cost(numbers | {ctx.lesson_number}) - _window_cost(numbers))
 
 
 @dataclass(frozen=True)
@@ -158,9 +171,11 @@ class Scheduler:
     Если попытка упирается в лимит откатов, поиск начинается заново со случайным разбиением ничьих.
     """
 
-    def __init__(self, time_limit_s: float = 120) -> None:
-        """time_limit_s: лимит времени на одну генерацию."""
+    def __init__(self, time_limit_s: float = 120, extra_attempts: int = _EXTRA_ATTEMPTS) -> None:
+        """time_limit_s: лимит времени на одну генерацию, extra_attempts: сколько ещё раз искать после первого
+        найденного расписания, чтобы выбрать лучшее."""
         self._time_limit_s = time_limit_s
+        self._extra_attempts = extra_attempts
 
     def build(
         self,
@@ -177,21 +192,39 @@ class Scheduler:
         self._last_progress_at = float("-inf")
         self._deadline = deadline
 
-        budget, seed = _FIRST_BUDGET, 0
+        self._seed = 0
+
+        best = self._attempt(request)
+        best_cost = _cost(best)
+        for _ in range(self._extra_attempts):
+            try:
+                lessons = self._attempt(request)
+            except (ScheduleTimeoutError, NoSolutionError):
+                # Время вышло: отдаём лучшее из уже найденных
+                break
+            cost = _cost(lessons)
+            if cost < best_cost:
+                best, best_cost = lessons, cost
+        return best
+
+    def _attempt(self, request: ScheduleRequest) -> list[Lesson]:
+        """Одна попытка: поиск с перезапусками и локальное улучшение."""
+        budget = _FIRST_BUDGET
         while True:
             self._check_stop()
-            self._reset(request, seed)
+            self._reset(request, self._seed)
             self._report_progress()
             try:
-                self._search(deadline, budget)
+                self._search(self._deadline, budget)
                 break
             except BacktrackBudgetError:
-                seed += 1
+                self._seed += 1
                 budget = int(budget * _BUDGET_GROWTH)
+        self._seed += 1
 
         # Отменённую задачу нельзя считать успешно завершённой
         self._check_stop()
-        self._improve(deadline)
+        self._improve(self._deadline)
         return [
             Lesson(
                 day=pl.slot.day,
@@ -494,5 +527,5 @@ class Scheduler:
                 group_after.add(new.lesson_number)
                 teacher_after.add(new.lesson_number)
             delta += _group_day_cost(group_after) - _group_day_cost(group)
-            delta += _W_TEACHER_WINDOW * (_windows(teacher_after) - _windows(teacher))
+            delta += _W_TEACHER_WINDOW * (_window_cost(teacher_after) - _window_cost(teacher))
         return delta

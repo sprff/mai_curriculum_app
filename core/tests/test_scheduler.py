@@ -4,7 +4,7 @@ import pytest
 
 from src.exceptions import ScheduleTimeoutError
 from src.schemas import Lesson, ScheduleRequest
-from src.service.scheduler import Scheduler
+from src.service.scheduler import Scheduler, _cost, _window_cost
 
 
 def _clashes(lessons: list[Lesson]) -> int:
@@ -47,3 +47,18 @@ def test_timeout(small_request: ScheduleRequest) -> None:
     """Лимит времени соблюдается."""
     with pytest.raises(ScheduleTimeoutError):
         Scheduler(time_limit_s=0).build(small_request)
+
+
+def test_window_cost_is_quadratic() -> None:
+    """Окно в две пары стоит как четыре окна в одну пару."""
+    assert _window_cost({1, 2, 3}) == 0
+    assert _window_cost({1, 3}) == 1
+    assert _window_cost({1, 4}) == 4
+    assert _window_cost({1, 3, 5}) == 2
+
+
+def test_extra_attempts_not_worse(small_request: ScheduleRequest) -> None:
+    """Дополнительные попытки не ухудшают штраф расписания."""
+    one = Scheduler(time_limit_s=10, extra_attempts=0).build(small_request)
+    many = Scheduler(time_limit_s=10, extra_attempts=3).build(small_request)
+    assert _cost(many) <= _cost(one)

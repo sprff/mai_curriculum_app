@@ -7,7 +7,7 @@ from src.constants import DAYS_PER_WEEK, LESSONS_PER_DAY
 from src.schemas import Lesson, ScheduleRequest, _Frozen
 from src.service.scheduler import Scheduler, _Pair, _Placement, _Slot
 
-_W_TEACHER_PREFERENCE = 5
+_W_TEACHER_PREFERENCE = 3
 
 
 class _TeacherSlot(_Frozen):
