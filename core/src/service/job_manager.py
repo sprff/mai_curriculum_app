@@ -97,6 +97,12 @@ class JobManager:
             record = self._find(job_id)
             return self._snapshot(record)
 
+    def get_with_request(self, job_id: str) -> tuple[JobState, ScheduleRequest]:
+        """Возвращает согласованные копии состояния задачи и её исходных данных."""
+        with self._lock:
+            record = self._find(job_id)
+            return self._snapshot(record), record.request.model_copy(deep=True)
+
     def cancel(self, job_id: str) -> JobState:
         """Отменяет задачу в очереди или отправляет сигнал работающей задаче"""
         with self._lock:
