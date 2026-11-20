@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from threading import Event
-from typing import Callable
 
 from pydantic import Field
 
@@ -83,6 +83,11 @@ class PreferredScheduler(Scheduler):
             key=lambda t: ((t, slot) not in self._preferred_slots, self._teacher_load[t]),
             default=None,
         )
+
+    def cost(self, lessons: list[Lesson]) -> int:
+        """Учитывает предпочтения при выборе лучшей попытки."""
+        bonus = sum(self._preference_cost(x.teacher_id, _Slot(x.day, x.lesson_number)) for x in lessons)
+        return super().cost(lessons) + bonus
 
     def _preference_cost(self, teacher_id: int, slot: _Slot) -> int:
         """Снижает штраф за пару в отмеченном преподавателем слоте."""
