@@ -1,6 +1,7 @@
 """Очередь фоновых задач для генератора расписания"""
 
 from copy import deepcopy
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from queue import Queue
@@ -11,6 +12,8 @@ from uuid import uuid4
 from src.exceptions import JobNotFoundError, ScheduleCancelledError
 from src.schemas import Lesson, ScheduleRequest
 from src.service.scheduler import Scheduler
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,7 @@ class _JobRecord:
     error: str | None = None
     result: list[Lesson] | None = None
     cancel_event: Event = field(default_factory=Event)
+    logged_progress_percent: int = 0
 
 
 class JobManager:
@@ -87,7 +91,8 @@ class JobManager:
         with self._lock:
             self._jobs[job_id] = record
 
-        # Здесь нет ожидания завершения генерации
+        # Логируем создание до запуска, чтобы события шли в правильном порядке
+        logger.info("Задача создана: id=%s, статус=queued, пар=%d", job_id, total)
         self._queue.put(job_id)
         return job_id
 
@@ -99,6 +104,7 @@ class JobManager:
 
     def cancel(self, job_id: str) -> JobState:
         """Отменяет задачу в очереди или отправляет сигнал работающей задаче"""
+        action = None
         with self._lock:
             record = self._find(job_id)
 
@@ -107,12 +113,18 @@ class JobManager:
                 record.cancel_event.set()
                 record.status = "cancelled"
                 record.finished_at = datetime.now(timezone.utc)
+                action = "Задача отменена в очереди"
             elif record.status == "running":
                 # Работающая задача увидит сигнал при следующей проверке
                 record.cancel_event.set()
+                action = "Запрошена отмена работающей задачи"
 
             # Для done, failed и cancelled повторная отмена ничего не меняет
-            return self._snapshot(record)
+            state = self._snapshot(record)
+
+        if action is not None:
+            logger.info("%s: id=%s", action, job_id)
+        return state
 
     def _find(self, job_id: str) -> _JobRecord:
         """Ищет задачу, вызывается только внутри блокировки"""
@@ -137,12 +149,23 @@ class JobManager:
         )
 
     def _update_progress(self, job_id: str, placed: int, total: int) -> None:
-        """Получает прогресс от Scheduler и сохраняет его"""
+        """Сохраняет прогресс; пишет в лог не чаще каждого нового десятка процентов"""
+        logged_percent = None
         with self._lock:
             record = self._jobs[job_id]
             if record.status == "running":
                 record.progress_placed = placed
                 record.progress_total = total
+
+                if total > 0:
+                    percent = min(100, max(0, placed * 100 // total))
+                    bucket = percent // 10 * 10
+                    if bucket > record.logged_progress_percent:
+                        record.logged_progress_percent = bucket
+                        logged_percent = bucket
+
+        if logged_percent is not None:
+            logger.info("Прогресс генерации: id=%s, %d%% (%d/%d)", job_id, logged_percent, placed, total)
 
     def _run_worker(self) -> None:
         """Забирает задачи из очереди и выполняет их по одной"""
@@ -157,6 +180,7 @@ class JobManager:
                     record.status = "running"
                     record.started_at = datetime.now(timezone.utc)
 
+                logger.info("Генерация началась: id=%s, статус=running", job_id)
                 try:
                     scheduler = self._scheduler_factory(self._time_limit_s)
                     result = scheduler.build(
@@ -173,10 +197,14 @@ class JobManager:
                             record.progress_placed = record.progress_total
                             record.result = result
                         record.finished_at = datetime.now(timezone.utc)
+                        final_status = record.status
+
+                    logger.info("Генерация завершена: id=%s, статус=%s", job_id, final_status)
                 except ScheduleCancelledError:
                     with self._lock:
                         record.status = "cancelled"
                         record.finished_at = datetime.now(timezone.utc)
+                    logger.info("Генерация отменена: id=%s, статус=cancelled", job_id)
                 except Exception as error:
                     with self._lock:
                         # Сюда попадёт и ScheduleTimeoutError
@@ -186,6 +214,13 @@ class JobManager:
                             record.status = "failed"
                             record.error = str(error)
                         record.finished_at = datetime.now(timezone.utc)
+                        final_status = record.status
+
+                    if final_status == "failed":
+                        # Добавляем traceback: по нему удобнее искать причину ошибки
+                        logger.exception("Ошибка генерации: id=%s, статус=failed", job_id)
+                    else:
+                        logger.info("Генерация отменена: id=%s, статус=cancelled", job_id)
             finally:
                 # Сообщаем очереди, что эта задача больше не выполняется
                 self._queue.task_done()

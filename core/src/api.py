@@ -6,10 +6,12 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from src.exceptions import JobNotFoundError
+from src.logging_config import configure_logging
 from src.schemas import ScheduleRequest
 from src.service.job_manager import JobManager, JobState
 from src.service.validator import ValidationIssue, validate
 
+configure_logging()
 app = FastAPI(title="MAI Curriculum Core")
 job_manager = JobManager()
 
