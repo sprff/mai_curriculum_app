@@ -28,6 +28,38 @@ def test_create_job_returns_schedule(small_request: ScheduleRequest) -> None:
     assert len(state["result"]) == 27
 
 
+def test_create_job_uses_teacher_slot_marks() -> None:
+    """Генерация через API учитывает предпочтения и запреты при поиске и переносе."""
+    data = {
+        "classrooms": [{"id_number": 101, "capacity": 30}],
+        "groups": [{"id": 1, "size": 20}],
+        "subjects": [{"id": 1, "weekly_number_of_lessons": 1}],
+        "group_subjects": [{"group_id": 1, "subject_id": 1}],
+        "teacher_subjects": [{"teacher_id": 1, "subject_id": 1}],
+        "teacher_preferred_slots": [
+            {"teacher_id": 1, "day": 0, "lesson_number": 2},
+            {"teacher_id": 1, "day": 1, "lesson_number": 1},
+        ],
+        "teacher_unavailable_slots": [{"teacher_id": 1, "day": 0, "lesson_number": 2}],
+    }
+    response = client.post("/jobs", json=data)
+    assert response.status_code == 202
+
+    state = _wait_until_finished(response.json()["job_id"])
+    assert state["status"] == "done"
+    (lesson,) = state["result"]
+    assert (lesson["teacher_id"], lesson["day"], lesson["lesson_number"]) == (1, 1, 1)
+
+
+def test_create_job_rejects_slot_outside_grid(small_request: ScheduleRequest) -> None:
+    """API отклоняет отметку за пределами учебной недели."""
+    data = small_request.model_dump()
+    data["teacher_unavailable_slots"] = [{"teacher_id": 1, "day": 6, "lesson_number": 1}]
+    response = client.post("/jobs", json=data)
+    assert response.status_code == 422
+    assert response.json()["issues"][0]["code"] == "invalid_format"
+
+
 def test_create_job_with_validation_issues(small_request: ScheduleRequest) -> None:
     """Валидатор нашёл проблему: генерация не запускается, возвращается список проблем."""
     data = small_request.model_dump()
